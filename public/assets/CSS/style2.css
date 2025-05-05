@@ -1,0 +1,99 @@
+/* Đặt kiểu chung cho toàn bộ trang */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Tiêu đề trang */
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Định dạng form đăng nhập */
+form {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Định dạng các label */
+label {
+    font-size: 17px;
+    color: #333;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+/* Định dạng các input */
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+    width: 100% !important;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+/* Định dạng nút submit */
+button[type="submit"] {
+    margin-top: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 100%;
+}
+
+button[type="submit"]:hover {
+    background-color: #45a049;
+}
+
+.forgot-password {
+    text-align: left; /* Căn trái để cùng hàng với phần tử bên cạnh */
+    display: inline-block; /* Để nằm trên cùng một dòng với các phần tử khác */
+    margin-right: 10px; /* Khoảng cách giữa phần quên mật khẩu và phần đăng ký */
+}
+
+.forgot-password a {
+    color: #4CAF50;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.forgot-password a:hover {
+    text-decoration: underline;
+}
+.register a {
+    color: #4CAF50;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.register a:hover {
+    text-decoration: underline;
+}
+/* Định dạng phần error */
+p.error {
+    color: red;
+    font-size: 14px;
+    text-align: center;
+}

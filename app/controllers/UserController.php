@@ -1,0 +1,189 @@
+<?php
+require_once 'app/controllers/BaseController.php';
+require_once 'app/models/UserModel.php';
+
+class UserController extends BaseController {
+    private $userModel;
+    
+    public function __construct() {
+        $this->userModel = new UserModel();
+    }
+    
+    // Hiển thị trang đăng nhập và xử lý đăng nhập
+    public function login() {
+        // Kiểm tra nếu form đã được gửi qua POST
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $postData = $this->getPostData();
+            
+            // Lỗ hổng: không lọc đầu vào
+            $username = $postData['username'];
+            $password = $postData['password'];
+
+            // Lỗ hổng: mật khẩu được lưu dưới dạng plaintext
+            $user = $this->userModel->authenticate($username, $password);
+
+            if ($user) {
+                // Lỗ hổng: lưu toàn bộ thông tin người dùng vào session (bao gồm mật khẩu)
+                $this->setSession('user', $user);
+                
+                // Lỗ hổng: không sử dụng SameSite cookie
+                if (isset($postData['remember_me'])) {
+                    setcookie('remembered_user', $username, time() + 30 * 24 * 60 * 60, '/');
+                }
+                
+                $this->redirect('index.php');
+            } else {
+                $error = "Tên đăng nhập hoặc mật khẩu không đúng!";
+                $this->view('user/login', ['error' => $error]);
+            }
+        } else {
+            $this->view('user/login');
+        }
+    }
+    
+    // Hiển thị trang đăng ký và xử lý đăng ký
+    public function register() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $postData = $this->getPostData();
+            
+            // Lỗ hổng: không lọc đầu vào
+            $username = $postData['username'];
+            $password = $postData['password'];
+            $email = $postData['email'];
+            
+            // Lỗ hổng: không xác thực email
+            $user = $this->userModel->Get_user($username);
+
+            if ($user) {
+                $error = "Tài khoản đã tồn tại";
+                $this->view('user/register', ['error' => $error]);
+            } else {
+                // Lỗ hổng: không hash mật khẩu
+                $result = $this->userModel->register($username, $password, $email);
+                if ($result) {
+                    $this->redirect('index.php?controller=user&action=login');
+                } else {
+                    $error = "Đăng ký thất bại";
+                    $this->view('user/register', ['error' => $error]);
+                }
+            }
+        } else {
+            $this->view('user/register');
+        }
+    }
+    
+    // Đăng xuất
+    public function logout() {
+        session_unset();
+        session_destroy();
+        
+        // Lỗ hổng: không xóa các cookie liên quan
+        $this->redirect('index.php');
+    }
+    
+    // Hiển thị trang hồ sơ người dùng
+    public function profile() {
+        $this->requireLogin();
+        
+        $user = $this->getLoggedInUser();
+        $userData = $this->userModel->Get_user($user['username']);
+        
+        $this->view('user/profile', ['user' => $userData]);
+    }
+    
+    // Đổi mật khẩu
+    public function forgot_password() {
+        $this->requireLogin();
+        
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $postData = $this->getPostData();
+            
+            $password = $postData['password'];
+            $new_password = $postData['new_password'];
+            $confirm_password = $postData['confirm_password'];
+            
+            $user = $this->getLoggedInUser();
+            $userData = $this->userModel->Get_user($user['username']);
+            
+            // Lỗ hổng: so sánh mật khẩu không an toàn
+            if ($userData['password'] == $password) {
+                if ($new_password == $confirm_password) {
+                    // Lỗ hổng: không hash mật khẩu mới
+                    $result = $this->userModel->forget_password($user['username'], $new_password);
+                    $this->redirect('index.php?controller=user&action=login');
+                } else {
+                    $error = "Xác nhận mật khẩu không khớp";
+                    $this->view('user/forget_password', ['error' => $error]);
+                }
+            } else {
+                $error = "Mật khẩu hiện tại không đúng";
+                $this->view('user/forget_password', ['error' => $error]);
+            }
+        } else {
+            $this->view('user/forget_password');
+        }
+    }
+    
+    // Cập nhật thông tin hồ sơ
+    public function change_profile() {
+        $this->requireLogin();
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $postData = $this->getPostData();
+            
+            // Lỗ hổng: không lọc đầu vào - có thể dẫn đến XSS
+            $fullname = $postData['fullname'];
+            $phone = $postData['phone'];
+            $gioi_tinh = $postData['gioi_tinh'];
+            $ngay_sinh = $postData['ngay_sinh'];
+            
+            $user = $this->getLoggedInUser();
+            
+            // Lỗ hổng: SQL Injection
+            $this->userModel->change_profile($fullname, $ngay_sinh, $gioi_tinh, $phone, $user['username']);
+            
+            $this->redirect('index.php?controller=user&action=profile');
+        }
+    }
+    
+    // Lỗ hổng: thực thi mã tùy ý
+    public function executeQuery() {
+        // Đây là một endpoint debug nhưng có lỗ hổng nghiêm trọng
+        if (isset($_GET['query'])) {
+            $query = $_GET['query'];
+            $result = $this->userModel->executeCustomQuery($query);
+            echo "Kết quả: ";
+            var_dump($result);
+            exit;
+        }
+    }
+    
+    // Lỗ hổng: Path Traversal trong xem avatar
+    public function viewAvatar() {
+        if (isset($_GET['file'])) {
+            // Lỗ hổng: không kiểm tra/lọc tên tệp - Path Traversal
+            $file = $_GET['file'];
+            $avatar = $this->userModel->getUserAvatar($file);
+            
+            header('Content-Type: image/jpeg');
+            echo $avatar;
+            exit;
+        }
+    }
+    
+    // Lịch sử mua hàng
+    public function history() {
+        $this->requireLogin();
+        $user = $this->getLoggedInUser();
+        // Hiển thị lịch sử mua hàng
+        $this->view('user/history', ['username' => $user['username']]);
+    }
+    
+    // Xem chi tiết sản phẩm
+    public function detail_product() {
+        $product_id = isset($_GET['id']) ? $_GET['id'] : 1;
+        $product = $this->userModel->Get_product($product_id);
+        $this->view('user/details_product', ['product' => $product]);
+    }
+}
+?>

@@ -1,0 +1,91 @@
+<?php
+class BaseController {
+    
+    // Hiển thị view với dữ liệu
+    protected function view($view, $data = []) {
+        // Extract data để sử dụng trong view
+        extract($data);
+        
+        // Kiểm tra xem tệp view có tồn tại không
+        $view_file = "app/views/$view.php";
+        if (file_exists($view_file)) {
+            require_once $view_file;
+        } else {
+            die("View không tồn tại: $view");
+        }
+    }
+    
+    // Chuyển hướng
+    protected function redirect($url) {
+        // Kiểm tra nếu URL đã bắt đầu bằng http hoặc https, hoặc đã chứa index.php
+        if (strpos($url, 'http') !== 0 && strpos($url, 'index.php') !== 0) {
+            // Nếu là đường dẫn tương đối, thêm 'index.php?controller=' vào trước
+            if (strpos($url, 'index.php?') !== 0) {
+                // Kiểm tra nếu URL chứa controller/action
+                if (strpos($url, '/') !== false) {
+                    list($controller, $action) = explode('/', $url);
+                    $url = "index.php?controller=$controller&action=$action";
+                } else {
+                    // Nếu chỉ có controller
+                    $url = "index.php?controller=$url";
+                }
+            }
+        }
+        
+        header("Location: $url");
+        exit();
+    }
+    
+    // Lấy dữ liệu POST
+    protected function getPostData() {
+        // Lỗ hổng: không lọc/validate dữ liệu đầu vào
+        return $_POST;
+    }
+    
+    // Lấy dữ liệu GET
+    protected function getQueryData() {
+        // Lỗ hổng: không lọc/validate dữ liệu đầu vào
+        return $_GET;
+    }
+    
+    // Kiểm tra xem người dùng đã đăng nhập chưa
+    protected function isLoggedIn() {
+        return isset($_SESSION['user']);
+    }
+    
+    // Lấy thông tin người dùng đã đăng nhập
+    protected function getLoggedInUser() {
+        return isset($_SESSION['user']) ? $_SESSION['user'] : null;
+    }
+    
+    // Yêu cầu đăng nhập
+    protected function requireLogin() {
+        if (!$this->isLoggedIn()) {
+            $this->redirect('index.php?controller=user&action=login');
+        }
+    }
+    
+    // Thêm dữ liệu vào session
+    protected function setSession($key, $value) {
+        $_SESSION[$key] = $value;
+    }
+    
+    // Lấy dữ liệu từ session
+    protected function getSession($key) {
+        return isset($_SESSION[$key]) ? $_SESSION[$key] : null;
+    }
+    
+    // Xóa dữ liệu khỏi session
+    protected function unsetSession($key) {
+        if (isset($_SESSION[$key])) {
+            unset($_SESSION[$key]);
+        }
+    }
+    
+    // Lỗ hổng: Cross-Site Request Forgery - không kiểm tra CSRF token
+    protected function validateCSRF() {
+        // Cố tình không thực hiện kiểm tra CSRF
+        return true;
+    }
+}
+?> 
