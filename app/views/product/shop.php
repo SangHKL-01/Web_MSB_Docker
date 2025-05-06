@@ -61,10 +61,9 @@
         <!-- Thêm các danh mục phổ biến -->
         <div class="popular-tags">
             <span>Phổ biến:</span>
-            <a href="index.php?controller=Product&action=search&keyword=áo">Áo</a>
-            <a href="index.php?controller=Product&action=search&keyword=quần">Quần</a>
-            <a href="index.php?controller=Product&action=search&keyword=giày">Giày</a>
-            <a href="index.php?controller=Product&action=search&keyword=túi">Túi xách</a>
+            <a href="index.php?controller=Product&action=search&keyword=áo">labtop</a>
+            <a href="index.php?controller=Product&action=search&keyword=quần">apple watch</a>
+            <a href="index.php?controller=Product&action=search&keyword=giày">smartphone</a>
         </div>
     </div>
 
