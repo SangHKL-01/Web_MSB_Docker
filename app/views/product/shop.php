@@ -98,9 +98,15 @@
         <!-- Thêm các danh mục phổ biến -->
         <div class="popular-tags">
             <span>Phổ biến:</span>
+<<<<<<< HEAD
             <a href="index.php?controller=Product&action=search&keyword=labtop">labtop</a>
             <a href="index.php?controller=Product&action=search&keyword=apple watch">apple watch</a>
             <a href="index.php?controller=Product&action=search&keyword=smartphone">smartphone</a>
+=======
+            <a href="index.php?controller=Product&action=search&keyword=áo">labtop</a>
+            <a href="index.php?controller=Product&action=search&keyword=quần">apple watch</a>
+            <a href="index.php?controller=Product&action=search&keyword=giày">smartphone</a>
+>>>>>>> 413db35a0b6b45341d89771b3f462e2aab0c1ab8
         </div>
     </div>
 
