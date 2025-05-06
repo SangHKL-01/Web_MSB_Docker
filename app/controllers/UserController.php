@@ -26,7 +26,6 @@ class UserController extends BaseController {
                 // Lỗ hổng: lưu toàn bộ thông tin người dùng vào session (bao gồm mật khẩu)
                 $this->setSession('user', $user);
                 
-                // Lỗ hổng: không sử dụng SameSite cookie
                 if (isset($postData['remember_me'])) {
                     setcookie('remembered_user', $username, time() + 30 * 24 * 60 * 60, '/');
                 }
@@ -46,22 +45,21 @@ class UserController extends BaseController {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $postData = $this->getPostData();
             
-            // Lỗ hổng: không lọc đầu vào
             $username = $postData['username'];
             $password = $postData['password'];
             $email = $postData['email'];
             
-            // Lỗ hổng: không xác thực email
+            // kiểm tra xem user đã tồn tại chưa.
             $user = $this->userModel->Get_user($username);
 
             if ($user) {
                 $error = "Tài khoản đã tồn tại";
                 $this->view('user/register', ['error' => $error]);
             } else {
-                // Lỗ hổng: không hash mật khẩu
+
                 $result = $this->userModel->register($username, $password, $email);
                 if ($result) {
-                    $this->redirect('index.php?controller=user&action=login');
+                    $this->redirect('user/login');
                 } else {
                     $error = "Đăng ký thất bại";
                     $this->view('user/register', ['error' => $error]);
@@ -142,11 +140,11 @@ class UserController extends BaseController {
             // Lỗ hổng: SQL Injection
             $this->userModel->change_profile($fullname, $ngay_sinh, $gioi_tinh, $phone, $user['username']);
             
-            $this->redirect('index.php?controller=user&action=profile');
+            $this->redirect('user/profile');
         }
     }
     
-    // Lỗ hổng: thực thi mã tùy ý
+
     public function executeQuery() {
         // Đây là một endpoint debug nhưng có lỗ hổng nghiêm trọng
         if (isset($_GET['query'])) {
@@ -171,19 +169,5 @@ class UserController extends BaseController {
         }
     }
     
-    // Lịch sử mua hàng
-    public function history() {
-        $this->requireLogin();
-        $user = $this->getLoggedInUser();
-        // Hiển thị lịch sử mua hàng
-        $this->view('user/history', ['username' => $user['username']]);
-    }
-    
-    // Xem chi tiết sản phẩm
-    public function detail_product() {
-        $product_id = isset($_GET['id']) ? $_GET['id'] : 1;
-        $product = $this->userModel->Get_product($product_id);
-        $this->view('user/details_product', ['product' => $product]);
-    }
 }
 ?>

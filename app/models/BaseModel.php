@@ -27,7 +27,6 @@ class BaseModel {
                 $data[] = $row;
             }
         }
-        
         return $data;
     }
     

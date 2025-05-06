@@ -19,15 +19,26 @@
                     <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">ID</th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Tên sản phẩm</th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Số lượng</th>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Đơn giá</th>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Thành tiền</th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Hành động</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($products as $product): ?>
+                <?php 
+                $total = 0;
+                foreach ($products as $product): 
+                    $price = isset($product['price']) ? $product['price'] : 0;
+                    $quantity = isset($product['quantity']) ? $product['quantity'] : 1;
+                    $subtotal = $price * $quantity;
+                    $total += $subtotal;
+                ?>
                     <tr class="border-t">
                         <td class="px-4 py-2"><?= $product['id'] ?? '-' ?></td>
-                        <td class="px-4 py-2"><?= $product['product_name'] ?? $product['name'] ?? '-' ?></td>
-                        <td class="px-4 py-2"><?= $product['quantity'] ?? '1' ?></td>
+                        <td class="px-4 py-2"><?= $product['product_name'] ?? $product['name'] ?? $product['name_product'] ?? '-' ?></td>
+                        <td class="px-4 py-2"><?= $quantity ?></td>
+                        <td class="px-4 py-2"><?= number_format($price, 0, ',', '.') ?> đ</td>
+                        <td class="px-4 py-2"><?= number_format($subtotal, 0, ',', '.') ?> đ</td>
                         <td class="px-4 py-2">
                             <a href="index.php?controller=product&action=remove_from_cart&id=<?= $product['id'] ?>" 
                                class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded text-sm">
@@ -36,6 +47,11 @@
                         </td>
                     </tr>
                 <?php endforeach; ?>
+                <tr class="border-t font-bold bg-gray-50">
+                    <td colspan="4" class="px-4 py-2 text-right">Tổng tiền:</td>
+                    <td class="px-4 py-2"><?= number_format($total, 0, ',', '.') ?> đ</td>
+                    <td></td>
+                </tr>
             </tbody>
         </table>
         

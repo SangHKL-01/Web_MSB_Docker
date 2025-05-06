@@ -164,24 +164,7 @@ class Product_Model extends BaseModel {
         
         $user_id = $conn->real_escape_string($user_id);
         
-        // Kiểm tra bảng carts đã tồn tại chưa
-        $checkTableSQL = "SHOW TABLES LIKE 'carts'";
-        $tableExists = $conn->query($checkTableSQL);
-        
-        if (!$tableExists || $tableExists->num_rows == 0) {
-            error_log("Table carts does not exist");
-            return [];
-        }
-        
-        // Kiểm tra cột price đã tồn tại trong bảng carts chưa
-        $checkPriceColumnSQL = "SHOW COLUMNS FROM carts LIKE 'price'";
-        $priceColumnExists = $conn->query($checkPriceColumnSQL);
-        
-        // Kiểm tra cột product_id đã tồn tại trong bảng carts chưa
-        $checkProductIdColumnSQL = "SHOW COLUMNS FROM carts LIKE 'product_id'";
-        $productIdColumnExists = $conn->query($checkProductIdColumnSQL);
-        
-        // Truy vấn cơ bản để lấy danh sách sản phẩm trong giỏ hàng
+        // Truy vấn lấy danh sách sản phẩm trong giỏ hàng
         $sql = "SELECT * FROM carts WHERE user_id = '$user_id'";
         $result = $conn->query($sql);
         
@@ -192,10 +175,8 @@ class Product_Model extends BaseModel {
         
         $products = [];
         while ($row = $result->fetch_assoc()) {
-            // Nếu không có giá trong giỏ hàng hoặc giá = 0, cần lấy giá từ bảng products
-            if ((!$priceColumnExists || $priceColumnExists->num_rows == 0 || $row['price'] == 0) && 
-                ($productIdColumnExists && $productIdColumnExists->num_rows > 0 && isset($row['product_id']))) {
-                
+            // Nếu không có giá trong giỏ hàng hoặc giá = 0, lấy giá từ bảng products
+            if ((!isset($row['price']) || $row['price'] == 0) && isset($row['product_id'])) {
                 $product_id = $conn->real_escape_string($row['product_id']);
                 $productSql = "SELECT id, price, name FROM products WHERE id = '$product_id'";
                 $productResult = $conn->query($productSql);
@@ -203,120 +184,22 @@ class Product_Model extends BaseModel {
                 if ($productResult && $productResult->num_rows > 0) {
                     $productInfo = $productResult->fetch_assoc();
                     $row['price'] = $productInfo['price'];
-                    $row['product_id'] = $productInfo['id']; // Đảm bảo có product_id
                     
                     // Nếu name_product không tồn tại hoặc rỗng, sử dụng tên từ bảng products
                     if (empty($row['name_product'])) {
                         $row['name_product'] = $productInfo['name'];
                     }
                     
-                    error_log("Retrieved price {$productInfo['price']} for product ID {$product_id}");
-                    
-                    // Cập nhật giá trong giỏ hàng nếu cột price tồn tại
-                    if ($priceColumnExists && $priceColumnExists->num_rows > 0) {
-                        $updateSql = "UPDATE carts SET price = '{$productInfo['price']}' WHERE id = '{$row['id']}'";
-                        $conn->query($updateSql);
-                    }
+                    // Cập nhật giá trong giỏ hàng
+                    $updateSql = "UPDATE carts SET price = '{$productInfo['price']}' WHERE id = '{$row['id']}'";
+                    $conn->query($updateSql);
                 }
-            }
-            
-            // Đảm bảo các trường cần thiết luôn tồn tại
-            if (!isset($row['price']) || $row['price'] == 0) {
-                $row['price'] = 10000; // Giá mặc định nếu không tìm thấy
-                error_log("Setting default price for cart item ID: {$row['id']}");
-            }
-            
+            }           
             $products[] = $row;
         }
         
         return $products;
     }
-
-    public function history($user_id) {
-        // Sử dụng kết nối từ Database class
-        $productDb = Database::getProductInstance();
-        $conn = $productDb->getConnection();
-        
-        // Kiểm tra kết nối
-        if (!$conn) {
-            error_log("Database connection error in history");
-            return [];
-        }
-        
-        // Đảm bảo bảng đã được tạo
-        if (!$this->initializeOrderTables()) {
-            error_log("Could not initialize order tables in history");
-            return [];
-        }
-        
-        // Lấy tất cả đơn hàng của người dùng
-        $user_id = $conn->real_escape_string($user_id);
-        
-        // Kiểm tra xem cột order_date có tồn tại không
-        $checkOrderDateColumn = "SHOW COLUMNS FROM orders LIKE 'order_date'";
-        $orderDateExists = $conn->query($checkOrderDateColumn);
-        
-        // Kiểm tra xem cột created_at có tồn tại không
-        $checkCreatedAtColumn = "SHOW COLUMNS FROM orders LIKE 'created_at'";
-        $createdAtExists = $conn->query($checkCreatedAtColumn);
-        
-        // Quyết định cột nào dùng để sắp xếp
-        if ($orderDateExists && $orderDateExists->num_rows > 0) {
-            $sql = "SELECT o.* FROM orders o WHERE o.user_id = '$user_id' ORDER BY o.order_date DESC";
-        } elseif ($createdAtExists && $createdAtExists->num_rows > 0) {
-            $sql = "SELECT o.* FROM orders o WHERE o.user_id = '$user_id' ORDER BY o.created_at DESC";
-        } else {
-            // Nếu không có cột thời gian nào, không sắp xếp
-            $sql = "SELECT o.* FROM orders o WHERE o.user_id = '$user_id'";
-        }
-        
-        $result = $conn->query($sql);
-        
-        if (!$result) {
-            error_log("SQL Error in history: " . $conn->error);
-            error_log("SQL Query: " . $sql);
-            return [];
-        }
-        
-        $orders = [];
-        while ($row = $result->fetch_assoc()) {
-            // Lấy chi tiết đơn hàng
-            $order_id = $row['id'];
-            $details_sql = "SELECT * FROM order_details WHERE order_id = '$order_id'";
-            $details_result = $conn->query($details_sql);
-            
-            $items = [];
-            if ($details_result && $details_result->num_rows > 0) {
-                while ($detail = $details_result->fetch_assoc()) {
-                    $items[] = $detail;
-                }
-            }
-            
-            $row['items'] = $items;
-            
-            // Đảm bảo các trường thông tin khách hàng luôn có trong kết quả
-            if (!isset($row['customer_name'])) {
-                $row['customer_name'] = 'Khách hàng';
-            }
-            if (!isset($row['customer_phone'])) {
-                $row['customer_phone'] = '';
-            }
-            if (!isset($row['customer_address'])) {
-                $row['customer_address'] = '';
-            }
-            if (!isset($row['payment_method'])) {
-                $row['payment_method'] = 'Thanh toán khi nhận hàng';
-            }
-            if (!isset($row['notes'])) {
-                $row['notes'] = '';
-            }
-            
-            $orders[] = $row;
-        }
-        
-        return $orders;
-    }
-
     // Thêm sản phẩm vào giỏ hàng
     public function insert_cart($user_id, $name_product, $quantity, $price = 0, $product_id = null) {
         $productDb = Database::getProductInstance();

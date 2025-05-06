@@ -38,13 +38,11 @@ class BaseController {
     
     // Lấy dữ liệu POST
     protected function getPostData() {
-        // Lỗ hổng: không lọc/validate dữ liệu đầu vào
         return $_POST;
     }
     
     // Lấy dữ liệu GET
     protected function getQueryData() {
-        // Lỗ hổng: không lọc/validate dữ liệu đầu vào
         return $_GET;
     }
     
@@ -61,10 +59,10 @@ class BaseController {
     // Yêu cầu đăng nhập
     protected function requireLogin() {
         if (!$this->isLoggedIn()) {
-            $this->redirect('index.php?controller=user&action=login');
+            $this->redirect('user/login');
         }
     }
-    
+   
     // Thêm dữ liệu vào session
     protected function setSession($key, $value) {
         $_SESSION[$key] = $value;
@@ -82,7 +80,6 @@ class BaseController {
         }
     }
     
-    // Lỗ hổng: Cross-Site Request Forgery - không kiểm tra CSRF token
     protected function validateCSRF() {
         // Cố tình không thực hiện kiểm tra CSRF
         return true;
