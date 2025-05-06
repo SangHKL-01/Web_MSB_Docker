@@ -84,5 +84,34 @@ class BaseController {
         // Cố tình không thực hiện kiểm tra CSRF
         return true;
     }
+    
+    protected function getCartItemCount() {
+        if (!$this->isLoggedIn()) {
+            return 0;
+        }
+        
+        $user = $this->getLoggedInUser();
+        
+        // Kết nối đến database
+        $productDb = Database::getProductInstance();
+        $conn = $productDb->getConnection();
+        
+        if (!$conn) {
+            return 0;
+        }
+        
+        $user_id = $conn->real_escape_string($user['id']);
+        
+        // Lấy tổng số sản phẩm trong giỏ hàng
+        $sql = "SELECT SUM(quantity) as total FROM carts WHERE user_id = '$user_id'";
+        $result = $conn->query($sql);
+        
+        if ($result && $result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            return $row['total'] ? $row['total'] : 0;
+        }
+        
+        return 0;
+    }
 }
 ?> 

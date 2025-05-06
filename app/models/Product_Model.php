@@ -201,7 +201,7 @@ class Product_Model extends BaseModel {
         return $products;
     }
     // Thêm sản phẩm vào giỏ hàng
-    public function insert_cart($user_id, $name_product, $quantity, $price = 0, $product_id = null) {
+    public function insert_cart($user_id, $name_product, $quantity, $price = 0, $product_id) {
         $productDb = Database::getProductInstance();
         $conn = $productDb->getConnection();
         
@@ -213,39 +213,19 @@ class Product_Model extends BaseModel {
         // Escape dữ liệu
         $user_id = $conn->real_escape_string($user_id);
         $name_product = $conn->real_escape_string($name_product);
-        $quantity = $conn->real_escape_string($quantity);
-        $price = $conn->real_escape_string($price);
-        $product_id = $product_id ? $conn->real_escape_string($product_id) : null;
+        $quantity = (int)$quantity; // Đảm bảo số lượng là số nguyên
+        $price = (float)$price; // Đảm bảo giá là số thực
+        $product_id = $conn->real_escape_string($product_id);
         
-        // Đảm bảo bảng carts tồn tại với cấu trúc phù hợp
-        $this->ensureCartTable($conn);
-        
-        // Nếu không có product_id, thử lấy từ tên sản phẩm
-        if (!$product_id) {
-            $query = "SELECT id, price FROM products WHERE name = '$name_product' LIMIT 1";
+        // Nếu giá = 0, lấy giá từ bảng products
+        if ($price == 0 || empty($price)) {
+            $query = "SELECT price FROM products WHERE id = '$product_id' LIMIT 1";
             $result = $conn->query($query);
             
             if ($result && $result->num_rows > 0) {
                 $productInfo = $result->fetch_assoc();
-                $product_id = $productInfo['id'];
-                
-                // Sử dụng giá từ bảng products nếu giá truyền vào là 0
-                if ($price == 0 || empty($price)) {
-                    $price = $productInfo['price'];
-                    error_log("Retrieved price $price from products table for product: $name_product");
-                }
-            }
-        } else {
-            // Nếu có product_id nhưng giá = 0, lấy giá từ bảng products
-            if ($price == 0 || empty($price)) {
-                $query = "SELECT price FROM products WHERE id = '$product_id' LIMIT 1";
-                $result = $conn->query($query);
-                
-                if ($result && $result->num_rows > 0) {
-                    $productInfo = $result->fetch_assoc();
-                    $price = $productInfo['price'];
-                    error_log("Retrieved price $price for product ID: $product_id");
-                }
+                $price = $productInfo['price'];
+                error_log("Retrieved price $price for product ID: $product_id");
             }
         }
         
@@ -273,7 +253,7 @@ class Product_Model extends BaseModel {
         
         // Thêm mới sản phẩm vào giỏ hàng
         $insertSql = "INSERT INTO carts (user_id, product_id, product_name, quantity, price) 
-                     VALUES ('$user_id', " . ($product_id ? "'$product_id'" : "NULL") . ", '$name_product', '$quantity', '$price')";
+                     VALUES ('$user_id', '$product_id', '$name_product', '$quantity', '$price')";
         
         $result = $conn->query($insertSql);
         
@@ -287,56 +267,6 @@ class Product_Model extends BaseModel {
         return true;
     }
     
-    // Tạo bảng carts nếu chưa tồn tại
-    private function ensureCartTable($conn) {
-        // Kiểm tra bảng carts đã tồn tại chưa
-        $checkTableSQL = "SHOW TABLES LIKE 'carts'";
-        $tableExists = $conn->query($checkTableSQL);
-        
-        if (!$tableExists || $tableExists->num_rows == 0) {
-            $createTableSQL = "CREATE TABLE carts (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id VARCHAR(50) NOT NULL,
-                product_id INT DEFAULT NULL,
-                product_name VARCHAR(255) NOT NULL,
-                quantity INT NOT NULL DEFAULT 1,
-                price DECIMAL(10,2) DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )";
-            
-            if (!$conn->query($createTableSQL)) {
-                error_log("Error creating carts table: " . $conn->error);
-                return false;
-            }
-            
-            error_log("Created carts table successfully");
-        }
-        
-        // Kiểm tra cột product_id đã tồn tại chưa
-        $checkProdIdColumn = "SHOW COLUMNS FROM carts LIKE 'product_id'";
-        $prodIdExists = $conn->query($checkProdIdColumn);
-        
-        if (!$prodIdExists || $prodIdExists->num_rows == 0) {
-            $addColumnSQL = "ALTER TABLE carts ADD COLUMN product_id INT DEFAULT NULL AFTER user_id";
-            if (!$conn->query($addColumnSQL)) {
-                error_log("Error adding product_id column: " . $conn->error);
-            }
-        }
-        
-        // Kiểm tra cột price đã tồn tại chưa
-        $checkPriceColumn = "SHOW COLUMNS FROM carts LIKE 'price'";
-        $priceExists = $conn->query($checkPriceColumn);
-        
-        if (!$priceExists || $priceExists->num_rows == 0) {
-            $addColumnSQL = "ALTER TABLE carts ADD COLUMN price DECIMAL(10,2) DEFAULT 0 AFTER quantity";
-            if (!$conn->query($addColumnSQL)) {
-                error_log("Error adding price column: " . $conn->error);
-            }
-        }
-        
-        return true;
-    }
-
     // Tìm kiếm sản phẩm theo từ khóa
     public function searchProducts($keyword) {
         // Sử dụng kết nối từ Database class
@@ -350,7 +280,6 @@ class Product_Model extends BaseModel {
         }
         
         // Escape từ khóa để tránh SQL Injection
-        $keyword = $conn->real_escape_string($keyword);
         
         // Tìm kiếm trong tên và mô tả sản phẩm
         $sql = "SELECT * FROM products WHERE name LIKE '%$keyword%' OR description LIKE '%$keyword%'";
@@ -727,26 +656,8 @@ class Product_Model extends BaseModel {
             return [];
         }
         
-        // Escape dữ liệu
-        $user_id = $conn->real_escape_string($user_id);
-        
-        // Kiểm tra xem cột order_date có tồn tại không
-        $checkOrderDateColumn = "SHOW COLUMNS FROM orders LIKE 'order_date'";
-        $orderDateExists = $conn->query($checkOrderDateColumn);
-        
-        // Kiểm tra xem cột created_at có tồn tại không
-        $checkCreatedAtColumn = "SHOW COLUMNS FROM orders LIKE 'created_at'";
-        $createdAtExists = $conn->query($checkCreatedAtColumn);
-        
-        // Quyết định cột nào dùng để sắp xếp
-        if ($orderDateExists && $orderDateExists->num_rows > 0) {
-            $sql = "SELECT * FROM orders WHERE user_id = '$user_id' ORDER BY order_date DESC";
-        } elseif ($createdAtExists && $createdAtExists->num_rows > 0) {
-            $sql = "SELECT * FROM orders WHERE user_id = '$user_id' ORDER BY created_at DESC";
-        } else {
-            // Nếu không có cột thời gian nào, không sắp xếp
-            $sql = "SELECT * FROM orders WHERE user_id = '$user_id'";
-        }
+        // Truy vấn đơn giản
+        $sql = "SELECT * FROM orders WHERE user_id = $user_id ORDER BY created_at DESC";
         
         $result = $conn->query($sql);
         

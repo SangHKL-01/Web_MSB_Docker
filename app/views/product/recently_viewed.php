@@ -23,7 +23,7 @@
       <?php foreach ($products as $product): ?>
         <div class="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition">
           <a href="index.php?controller=product&action=viewProduct&id=<?= $product['id'] ?>">
-            <img src="<?= isset($product['image']) ? $product['image'] : 'public/assets/images/product-placeholder.jpg' ?>" 
+            <img src="<?= isset($product['image']) ? 'http://localhost/WEB_MSB/public/assets/images/'.$product['image'] : 'http://localhost/WEB_MSB/public/assets/images/product-placeholder.jpg' ?>" 
                 alt="<?= $product['name'] ?>"
                 class="w-full h-48 object-cover">
           </a>

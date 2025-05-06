@@ -1,12 +1,12 @@
 -- Script thiết lập database db_product
--- Tạo database nếu chưa tồn tại
-CREATE DATABASE IF NOT EXISTS db_product;
+-- Tạo database
+CREATE DATABASE db_product;
 
 -- Sử dụng database
 USE db_product;
 
 -- Tạo bảng products
-CREATE TABLE IF NOT EXISTS products (
+CREATE TABLE products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS products (
 );
 
 -- Tạo bảng carts
-CREATE TABLE IF NOT EXISTS carts (
+CREATE TABLE carts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     product_id INT,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS carts (
 );
 
 -- Tạo bảng orders
-CREATE TABLE IF NOT EXISTS orders (
+CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     total_amount DECIMAL(10, 2) NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 -- Tạo bảng order_details
-CREATE TABLE IF NOT EXISTS order_details (
+CREATE TABLE order_details (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT NOT NULL,
     product_id INT,
@@ -64,8 +64,7 @@ VALUES
 ('Laptop MacBook Pro M1', 'MacBook Pro với chip M1 mạnh mẽ, màn hình Retina', 35990000, 'product2.jpg', 'Laptop', 8),
 ('Tai nghe Bluetooth Apple AirPods Pro', 'Tai nghe không dây với chống ồn chủ động', 5990000, 'product3.jpg', 'Phụ kiện', 20),
 ('Đồng hồ thông minh Apple Watch Series 7', 'Đồng hồ thông minh với màn hình luôn bật', 10990000, 'product4.jpg', 'Đồng hồ thông minh', 12),
-('Máy tính bảng iPad Air', 'iPad Air mỏng nhẹ với chip A14 Bionic', 16990000, 'product5.jpg', 'Máy tính bảng', 10)
-ON DUPLICATE KEY UPDATE updated_at = NOW();
+('Máy tính bảng iPad Air', 'iPad Air mỏng nhẹ với chip A14 Bionic', 16990000, 'product5.jpg', 'Máy tính bảng', 10);
 
 -- Thông báo hoàn thành
 SELECT 'Thiết lập database db_product và các bảng thành công!' AS Message; 

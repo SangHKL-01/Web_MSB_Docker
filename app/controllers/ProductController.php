@@ -38,48 +38,62 @@ class ProductController extends BaseController {
     
     // Thêm sản phẩm vào giỏ hàng
     public function insert_cart() {
-        $this->requireLogin();
-        
         // Kiểm tra xem đã login chưa
         if (!$this->isLoggedIn()) {
-            $this->view('user/login', ['error' => 'Bạn cần đăng nhập']);
+            // Lưu URL hiện tại để chuyển hướng lại sau khi đăng nhập
+            $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+            $_SESSION['error'] = "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng";
+            $this->redirect('user/login');
             return;
         }
         
         $queryData = $this->getQueryData();
         $postData = $this->getPostData();
         
-        $id = isset($queryData['id']) ? $queryData['id'] : null;
-        $quantity = isset($postData['quantity']) ? $postData['quantity'] : 1;
+        $id = isset($queryData['id']) ? (int)$queryData['id'] : null;
+        $quantity = isset($postData['quantity']) ? (int)$postData['quantity'] : 1;
+        
+        // Đảm bảo số lượng là số dương
+        $quantity = max(1, $quantity);
+        
         $user = $this->getLoggedInUser();
         $user_id = $user['id'];
+        
+        // Lấy trang trước đó từ HTTP_REFERER
+        $referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'index.php?controller=product&action=index';
         
         if ($id) {
             $product = $this->productModel->Get_product($id);
             
             if ($product) {
-                // Đảm bảo có đầy đủ thông tin: product_id, tên sản phẩm, số lượng và giá
+                // Thêm sản phẩm vào giỏ hàng
                 $result = $this->productModel->insert_cart(
                     $user_id, 
                     $product['name'], 
                     $quantity, 
                     $product['price'],
-                    $product['id'] // Truyền thêm product_id
+                    $product['id']
                 );
                 
                 if ($result) {
-                    $this->redirect('index.php?controller=product&action=gio_hang');
+                    // Đặt thông báo thành công vào session
+                    $_SESSION['cart_message'] = "Đã thêm <strong>{$quantity}</strong> sản phẩm <strong>{$product['name']}</strong> vào giỏ hàng!";
+                    
+                    // Chuyển hướng trở lại trang trước đó
+                    header("Location: $referer");
+                    exit();
                 } else {
-                    $this->view('product/detail', [
-                        'product' => $product,
-                        'error' => 'Không thể thêm sản phẩm vào giỏ hàng'
-                    ]);
+                    $_SESSION['error'] = "Không thể thêm sản phẩm vào giỏ hàng";
+                    header("Location: $referer");
+                    exit();
                 }
             } else {
-                $this->redirect('index.php?controller=product&action=index');
+                $_SESSION['error'] = "Không tìm thấy sản phẩm";
+                $this->redirect('product/index');
             }
         } else {
-            $this->redirect('index.php?controller=product&action=index');
+            $_SESSION['error'] = "Thiếu thông tin sản phẩm";
+            $this->redirect('product/index');
         }
     }
     
@@ -103,89 +117,6 @@ class ProductController extends BaseController {
         
         $this->view('product/history', ['orders' => $orders]);
     }
-    
-    // Hàm tạo dữ liệu mẫu để kiểm thử giao diện
-    private function generateSampleOrders($user_id) {
-        $date = date('Y-m-d H:i:s');
-        $yesterday = date('Y-m-d H:i:s', strtotime('-1 day'));
-        $lastWeek = date('Y-m-d H:i:s', strtotime('-7 days'));
-        
-        // Đơn hàng 1 - đã thanh toán
-        $order1 = [
-            'user_id' => $user_id,
-            'total_amount' => 600000,
-            'status' => 'đã thanh toán',
-            'payment_method' => 'Thanh toán khi nhận hàng',
-            'created_at' => $date
-        ];
-        
-        $order1_id = $this->productModel->createOrder($order1);
-        
-        if ($order1_id) {
-            // Thêm chi tiết cho đơn hàng 1
-            $this->productModel->createOrderDetail([
-                'order_id' => $order1_id,
-                'product_id' => 1,
-                'product_name' => 'Áo thun nam cao cấp',
-                'quantity' => 2,
-                'price' => 200000
-            ]);
-            
-            $this->productModel->createOrderDetail([
-                'order_id' => $order1_id,
-                'product_id' => 3,
-                'product_name' => 'Quần jeans nam',
-                'quantity' => 1,
-                'price' => 200000
-            ]);
-        }
-        
-        // Đơn hàng 2 - đang xử lý
-        $order2 = [
-            'user_id' => $user_id,
-            'total_amount' => 350000,
-            'status' => 'đang xử lý',
-            'payment_method' => 'Chuyển khoản ngân hàng',
-            'created_at' => $yesterday
-        ];
-        
-        $order2_id = $this->productModel->createOrder($order2);
-        
-        if ($order2_id) {
-            // Thêm chi tiết cho đơn hàng 2
-            $this->productModel->createOrderDetail([
-                'order_id' => $order2_id,
-                'product_id' => 5,
-                'product_name' => 'Áo khoác nữ',
-                'quantity' => 1,
-                'price' => 350000
-            ]);
-        }
-        
-        // Đơn hàng 3 - đã hủy
-        $order3 = [
-            'user_id' => $user_id,
-            'total_amount' => 150000,
-            'status' => 'đã hủy',
-            'payment_method' => 'Thanh toán khi nhận hàng',
-            'created_at' => $lastWeek
-        ];
-        
-        $order3_id = $this->productModel->createOrder($order3);
-        
-        if ($order3_id) {
-            // Thêm chi tiết cho đơn hàng 3
-            $this->productModel->createOrderDetail([
-                'order_id' => $order3_id,
-                'product_id' => 7,
-                'product_name' => 'Túi xách nữ thời trang',
-                'quantity' => 1,
-                'price' => 150000
-            ]);
-        }
-    }
-    
-    // Xem chi tiết sản phẩm
     public function viewProduct() {
         $queryData = $this->getQueryData();
         
@@ -209,9 +140,13 @@ class ProductController extends BaseController {
                     }
                 }
                 
+                // Lấy số lượng sản phẩm trong giỏ hàng
+                $cartItemCount = $this->getCartItemCount();
+                
                 $this->view('product/detail', [
                     'product' => $product,
-                    'recentlyViewed' => array_slice($recentlyViewed, 0, 4) // Giới hạn hiển thị 4 sản phẩm
+                    'recentlyViewed' => array_slice($recentlyViewed, 0, 4), // Giới hạn hiển thị 4 sản phẩm
+                    'cartItemCount' => $cartItemCount
                 ]);
             } else {
                 $this->redirect('index.php?controller=product&action=index');
@@ -239,7 +174,7 @@ class ProductController extends BaseController {
         
         if (isset($queryData['keyword'])) {
             // Lọc đầu vào để tránh XSS
-            $keyword = htmlspecialchars($queryData['keyword']);
+            $keyword = $queryData['keyword'];
             
             // Thực hiện tìm kiếm sản phẩm với từ khóa đã được lọc
             $products = $this->productModel->searchProducts($keyword);
@@ -432,7 +367,7 @@ class ProductController extends BaseController {
         
         if (!$this->isLoggedIn()) {
             $_SESSION['error'] = "Vui lòng đăng nhập để tiếp tục thanh toán";
-            $this->redirect('index.php?controller=user&action=login');
+            $this->redirect('user/login');
             exit;
         }
 
@@ -443,7 +378,7 @@ class ProductController extends BaseController {
 
         if (empty($cart_items)) {
             $_SESSION['error'] = "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm trước khi thanh toán.";
-            $this->redirect('index.php?controller=product&action=gio_hang');
+            $this->redirect('product/gio_hang');
             exit;
         }
 
@@ -520,20 +455,40 @@ class ProductController extends BaseController {
     public function details_product() {
         $queryData = $this->getQueryData();
         
-  
         if (isset($queryData['id'])) {
-            $product = $this->productModel->Get_product($queryData['id']);
-            
-            // Lỗ hổng: lưu ID sản phẩm đã xem trong cookie không bảo mật
-            $this->productModel->saveRecentlyViewedProduct($queryData['id']);
+            // Chống SQL Injection bằng cách ép kiểu và lọc ID
+            $id = (int)$queryData['id'];
+            $product = $this->productModel->Get_product($id);
             
             if ($product) {
-                $this->view('product/details_product', ['product' => $product]);
+                // Lưu sản phẩm đã xem
+                $this->productModel->saveRecentlyViewedProduct($id);
+                
+                // Lấy danh sách sản phẩm đã xem gần đây
+                $recentlyViewed = $this->productModel->getRecentlyViewedProducts();
+                
+                // Loại bỏ sản phẩm hiện tại khỏi danh sách đã xem
+                foreach ($recentlyViewed as $key => $item) {
+                    if ($item['id'] == $id) {
+                        unset($recentlyViewed[$key]);
+                        break;
+                    }
+                }
+                
+                // Lấy số lượng sản phẩm trong giỏ hàng
+                $cartItemCount = $this->getCartItemCount();
+                
+                // Sử dụng view detail.php thay vì details_product.php
+                $this->view('product/detail', [
+                    'product' => $product,
+                    'recentlyViewed' => array_slice($recentlyViewed, 0, 4), // Giới hạn hiển thị 4 sản phẩm
+                    'cartItemCount' => $cartItemCount
+                ]);
             } else {
-                $this->redirect('index.php?controller=product&action=index');
+                $this->redirect('product/index');
             }
         } else {
-            $this->redirect('index.php?controller=product&action=index');
+            $this->redirect('product/index');
         }
     }
     

@@ -30,7 +30,12 @@ class UserController extends BaseController {
                     setcookie('remembered_user', $username, time() + 30 * 24 * 60 * 60, '/');
                 }
                 
-                $this->redirect('index.php');
+                // Kiểm tra quyền và chuyển hướng người dùng admin đến trang quản trị
+                if (isset($user['role']) && $user['role'] === 'admin') {
+                    $this->redirect('admin/index');
+                } else {
+                    $this->redirect('index.php');
+                }
             } else {
                 $error = "Tên đăng nhập hoặc mật khẩu không đúng!";
                 $this->view('user/login', ['error' => $error]);
@@ -141,18 +146,6 @@ class UserController extends BaseController {
             $this->userModel->change_profile($fullname, $ngay_sinh, $gioi_tinh, $phone, $user['username']);
             
             $this->redirect('user/profile');
-        }
-    }
-    
-
-    public function executeQuery() {
-        // Đây là một endpoint debug nhưng có lỗ hổng nghiêm trọng
-        if (isset($_GET['query'])) {
-            $query = $_GET['query'];
-            $result = $this->userModel->executeCustomQuery($query);
-            echo "Kết quả: ";
-            var_dump($result);
-            exit;
         }
     }
     

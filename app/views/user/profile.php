@@ -89,10 +89,10 @@
     <div class="w-64 flex flex-col items-center justify-start text-center">
       <img src="http://localhost/WEB_MSB/public/assets/images/avatar.jpg"
            class="w-50 h-50 rounded-full border border-gray-300 mb-4" alt="Avatar">
-      <label class="cursor-pointer bg-gray-200 text-sm px-4 py-2 rounded hover:bg-gray-300">
-        <input type="file" class="hidden" />
-        Tải ảnh
-      </label>
+      <form method="POST" action="upload_avatar.php" enctype="multipart/form-data">
+        <input type="file" name="avatar" accept="image/*" required>
+        <button type="submit">Tải lên</button>
+      </form>
     </div>
   </div>
 
