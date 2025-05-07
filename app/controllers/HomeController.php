@@ -28,12 +28,15 @@ class HomeController extends BaseController {
                 }
             }
         }
+        // Tính toán số lượng sản phẩm trong giỏ hàng
+        $cartItemCount = $this->getCartItemCount();
         
         // Hiển thị trang chủ
         $this->view('trangchu', [
             'featuredProducts' => $featuredProducts,
             'newestProducts' => $newestProducts,
-            'recentProducts' => $recentProducts
+            'recentProducts' => $recentProducts,
+            'cartItemCount' => $cartItemCount
         ]);
     }
     

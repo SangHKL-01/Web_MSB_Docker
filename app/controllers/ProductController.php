@@ -13,6 +13,9 @@ class ProductController extends BaseController {
     public function index() {
         $model = new Product_Model();
         
+        // Hiển thị giỏ hàng
+        $cartItemCount = $this->getCartItemCount();
+
         if (isset($_GET['sort_by']) && isset($_GET['sort_dir'])) {
             $sort_by = $_GET['sort_by'];
             $sort_dir = $_GET['sort_dir'];
@@ -21,7 +24,7 @@ class ProductController extends BaseController {
             $products = $model->getAll();
         }
         
-        $this->view('product/shop', ['products' => $products]);
+        $this->view('product/shop', ['products' => $products, 'cartItemCount' => $cartItemCount]);
     }
     
     // Hiển thị giỏ hàng
