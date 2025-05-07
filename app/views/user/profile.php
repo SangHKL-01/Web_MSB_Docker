@@ -85,15 +85,27 @@
 
 
 
-    <!-- Phần 3: Ảnh đại diện -->
-    <div class="w-64 flex flex-col items-center justify-start text-center">
-      <img src="http://localhost/WEB_MSB/public/assets/images/avatar.jpg"
-           class="w-50 h-50 rounded-full border border-gray-300 mb-4" alt="Avatar">
-      <form method="POST" action="upload_avatar.php" enctype="multipart/form-data">
-        <input type="file" name="avatar" accept="image/*" required>
-        <button type="submit">Tải lên</button>
-      </form>
+   <!-- Phần 3: Ảnh đại diện -->
+<div class="w-64 flex flex-col items-center justify-start text-center">
+  <img src="<?= isset($user['avatar']) ? 'uploads/avatars/' . htmlspecialchars($user['avatar']) : 'http://localhost/WEB_MSB/public/assets/images/avatar.jpg' ?>"
+       class="w-50 h-50 rounded-full border border-gray-300 mb-4" alt="Avatar">
+  
+  <?php if (isset($_SESSION['success'])): ?>
+    <div class="text-green-600 mb-2"><?= $_SESSION['success']; unset($_SESSION['success']); ?></div>
+  <?php endif; ?>
+  
+  <?php if (isset($_SESSION['error'])): ?>
+    <div class="text-red-600 mb-2"><?= $_SESSION['error']; unset($_SESSION['error']); ?></div>
+  <?php endif; ?>
+  
+  <form method="POST" action="index.php?controller=user&action=upload_avatar" enctype="multipart/form-data" class="w-full">
+    <div class="mb-3">
+      <input type="file" name="avatar" accept="image/*" required class="w-full text-sm">
     </div>
-  </div>
+    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition w-full">
+      Tải lên
+    </button>
+  </form>
+</div>
 
 </main>
