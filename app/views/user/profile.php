@@ -13,7 +13,7 @@
     <!-- Sidebar -->
     <aside class="w-64 bg-white rounded-lg shadow p-6 h-fit mr-6">
       <div class="flex items-center gap-4 mb-6"> 
-        <img src="http://localhost/WEB_MSB/public/assets/images/avatar.jpg"
+        <img src="<?= isset($user['avatar']) ? 'uploads/avatars/' . htmlspecialchars($user['avatar']) : 'http://localhost/WEB_MSB/public/assets/images/avatar.jpg' ?>"
              class="w-14 h-14 rounded-full border border-gray-300" alt="Avatar">
         <div>
           <p class="font-semibold"><?= $user['username'] ?></p>
