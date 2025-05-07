@@ -307,7 +307,7 @@
           <li><a href="index.php">Trang Chủ</a></li>
           <li><a href="index.php?controller=Product&action=index">Sản Phẩm</a></li>
           <li><a href="index.php?controller=Home&action=about">Giới Thiệu</a></li>
-          <li><a href="#">Liên Hệ</a></li>
+          <li><a href="index.php?controller=Home&action=contact">Liên Hệ</a></li>
           <li><a href="index.php?controller=Product&action=gio_hang">Giỏ Hàng <span id="cart-count">(<?= isset($cartItemCount) ? $cartItemCount : 0 ?>)</span></a></li>
           <?php
           if (isset($_SESSION['user'])) {
@@ -331,15 +331,6 @@
     unset($_SESSION['cart_message']);
   endif; ?>
   
-  <?php if (isset($_SESSION['error'])): ?>
-  <div class="alert alert-error" id="error-alert">
-    <?= $_SESSION['error'] ?>
-  </div>
-  <?php 
-    // Xóa thông báo sau khi hiển thị
-    unset($_SESSION['error']);
-  endif; ?>
-
   <div class="container mx-auto px-4 py-8">
     <!-- Chi tiết sản phẩm -->
     <main class="max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg mb-8">

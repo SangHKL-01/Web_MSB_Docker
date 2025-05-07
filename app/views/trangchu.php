@@ -3,9 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang Chủ - Kheo Báng Shop</title>
+    <title>Danh Sách Sản Phẩm - Kheo Báng Shop</title>
     <link rel="stylesheet" href="http://localhost/WEB_MSB/public/assets/CSS/homepage.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .alert {
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-width: 300px;
+            animation: fadeIn 0.3s, fadeOut 0.5s 3s forwards;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -19,7 +46,7 @@
                     <li><a href="index.php">Trang Chủ</a></li>
                     <li><a href="index.php?controller=Product&action=index">Sản Phẩm</a></li>
                     <li><a href="index.php?controller=Home&action=about">Giới Thiệu</a></li>
-                    <li><a href="index.php?controller=Home&action=contact">Liên Hệ</a></li>
+                    <li><a href="#">Liên Hệ</a></li>
                     <li><a href="index.php?controller=Product&action=gio_hang">Giỏ Hàng <span id="cart-count">(<?= isset($cartItemCount) ? $cartItemCount : 0 ?>)</span></a></li>
                     <?php
                     if (isset($_SESSION['user'])) {
@@ -40,6 +67,7 @@
             </nav>
         </div>
     </header>
+
     <!-- Hiển thị thông báo khi thêm vào giỏ hàng thành công -->
     <?php if (isset($_SESSION['cart_message'])): ?>
     <div class="alert alert-success" id="cart-alert">
