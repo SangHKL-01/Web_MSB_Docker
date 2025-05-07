@@ -59,15 +59,31 @@ class HomeController extends BaseController {
             return [];
         }
     }
+// Chức năng giới thiệu
+public function about() {
+    $queryData = $this->getQueryData();
     
-    // Lỗ hổng XSS: hiển thị thông tin từ tham số URL mà không lọc
-    public function about() {
-        $queryData = $this->getQueryData();
-        $message = isset($queryData['message']) ? $queryData['message'] : ''; // Lỗ hổng XSS
-        
-        $this->view('about', ['message' => $message]);
+    // Lọc dữ liệu đầu vào để ngăn chặn XSS
+    $message = isset($queryData['message']) ? htmlspecialchars($queryData['message'], ENT_QUOTES, 'UTF-8') : '';
+    $name = isset($queryData['name']) ? htmlspecialchars($queryData['name'], ENT_QUOTES, 'UTF-8') : '';
+    
+    // Thông tin giới thiệu
+    $aboutInfo = [
+        'title' => 'Giới thiệu về chúng tôi',
+        'content' => 'Chúng tôi là một công ty chuyên cung cấp các sản phẩm chất lượng cao với giá cả hợp lý.',
+        'message' => $message,
+        'name' => $name
+    ];
+    
+    $this->view('about', $aboutInfo);
+}    
+
+    // contact
+    // Chức năng liên hệ đơn giản hóa - chỉ hiển thị thông tin
+    public function contact() {
+        // Hiển thị trang liên hệ với thông tin cơ bản
+        $this->view('contact', []);
     }
-    
     // Lỗ hổng: Local File Inclusion
     public function page() {
         $queryData = $this->getQueryData();
