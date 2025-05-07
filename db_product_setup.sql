@@ -24,8 +24,6 @@ CREATE TABLE carts (
     user_id INT NOT NULL,
     product_id INT,
     product_name VARCHAR(255),
-    name VARCHAR(255),
-    name_product VARCHAR(255),
     quantity INT NOT NULL DEFAULT 1,
     price DECIMAL(10, 2) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

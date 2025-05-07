@@ -4,7 +4,7 @@ require_once 'app/models/BaseModel.php';
 class UserModel extends BaseModel {
 
     public function __construct() {
-        parent::__construct("users", false); // Sử dụng DB_WEB database
+        parent::__construct("users", false); // Sử dụng db_user database
     }
 
     // Lỗ hổng: SQL Injection thông qua truy vấn trực tiếp
@@ -96,6 +96,55 @@ class UserModel extends BaseModel {
         }
         
         return null;
+    }
+    
+    public function uploadAvatar($file, $user_id) {
+        // Kiểm tra lỗi upload
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            return ['status' => false, 'message' => 'Lỗi khi tải lên file.'];
+        }
+        
+        // Kiểm tra loại file
+        $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+        $file_info = finfo_open(FILEINFO_MIME_TYPE);
+        $file_type = finfo_file($file_info, $file['tmp_name']);
+        finfo_close($file_info);
+        
+        if (!in_array($file_type, $allowed_types)) {
+            return ['status' => false, 'message' => 'Chỉ chấp nhận file ảnh (JPEG, PNG, GIF).'];
+        }
+        
+        // Kiểm tra kích thước file (giới hạn 2MB)
+        if ($file['size'] > 2 * 1024 * 1024) {
+            return ['status' => false, 'message' => 'Kích thước file không được vượt quá 2MB.'];
+        }
+        
+        // Tạo tên file mới để tránh trùng lặp
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $new_filename = 'avatar_' . $user_id . '_' . time() . '.' . $extension;
+        
+        // Đảm bảo thư mục tồn tại
+        $target_dir = "uploads/avatars/";
+        if (!file_exists($target_dir)) {
+            mkdir($target_dir, 0755, true);
+        }
+        
+        $target_file = $target_dir . $new_filename;
+        
+        // Di chuyển file tải lên vào thư mục đích
+        if (move_uploaded_file($file['tmp_name'], $target_file)) {
+            // Cập nhật đường dẫn avatar trong database
+            $data = ['avatar' => $new_filename];
+            $result = $this->update($user_id, $data);
+            
+            if ($result) {
+                return ['status' => true, 'message' => 'Cập nhật avatar thành công.', 'filename' => $new_filename];
+            } else {
+                return ['status' => false, 'message' => 'Không thể cập nhật thông tin avatar trong database.'];
+            }
+        } else {
+            return ['status' => false, 'message' => 'Không thể lưu file avatar.'];
+        }
     }
 }
 ?>

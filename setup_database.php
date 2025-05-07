@@ -20,15 +20,15 @@ if ($conn->connect_error) {
 echo "<h1>Đang thiết lập cơ sở dữ liệu...</h1>";
 
 // Đọc nội dung các file SQL
-$db_web_sql = file_get_contents('db_web_setup.sql');
+$db_user_sql = file_get_contents('db_user_setup.sql');
 $db_product_sql = file_get_contents('db_product_setup.sql');
 
-// Chạy script db_web_setup.sql
-echo "<h2>Thiết lập database db_web:</h2>";
-if (executeMultipleQueries($conn, $db_web_sql)) {
-    echo "<p style='color: green;'>✓ Thiết lập db_web thành công</p>";
+// Chạy script db_user_setup.sql
+echo "<h2>Thiết lập database db_user:</h2>";
+if (executeMultipleQueries($conn, $db_user_sql)) {
+    echo "<p style='color: green;'>✓ Thiết lập db_user thành công</p>";
 } else {
-    echo "<p style='color: red;'>✗ Lỗi khi thiết lập db_web: " . $conn->error . "</p>";
+    echo "<p style='color: red;'>✗ Lỗi khi thiết lập db_user: " . $conn->error . "</p>";
 }
 
 // Chạy script db_product_setup.sql

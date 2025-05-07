@@ -20,9 +20,9 @@
 
 Nếu việc thiết lập tự động không hoạt động, bạn có thể thực hiện các bước sau:
 
-1. Tạo cơ sở dữ liệu `db_web` và `db_product` trong MySQL
+1. Tạo cơ sở dữ liệu `db_user` và `db_product` trong MySQL
 2. Nhập các file SQL sau vào cơ sở dữ liệu tương ứng:
-   - `db_web_setup.sql` cho `db_web`
+   - `db_user_setup.sql` cho `db_user`
    - `db_product_setup.sql` cho `db_product`
 3. Tạo các thư mục sau (nếu chưa tồn tại):
    - `uploads`
@@ -52,7 +52,7 @@ WEB_MSB/
 ├── db/                   # Các file liên quan đến database
 ├── public/               # Tài nguyên công khai (hình ảnh, CSS, JS)
 ├── uploads/              # Thư mục chứa file người dùng tải lên
-├── db_web_setup.sql      # Script tạo database db_web
+├── db_user_setup.sql      # Script tạo database db_user
 ├── db_product_setup.sql  # Script tạo database db_product
 ├── setup_database.php    # Script thiết lập cơ sở dữ liệu
 └── index.php             # Tệp khởi đầu

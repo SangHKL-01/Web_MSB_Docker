@@ -21,10 +21,10 @@ class Database {
         }
     }
     
-    // Lấy instance cho users database (DB_WEB)
+    // Lấy instance cho users database (DB_User)
     public static function getUserInstance() {
         if (self::$userInstance == null) {
-            self::$userInstance = new Database("DB_WEB");
+            self::$userInstance = new Database("db_user");
         }
         return self::$userInstance;
     }

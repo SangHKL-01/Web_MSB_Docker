@@ -162,5 +162,27 @@ class UserController extends BaseController {
         }
     }
     
+    public function upload_avatar() {
+        $this->requireLogin();
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['avatar'])) {
+            $user = $this->getLoggedInUser();
+            $result = $this->userModel->uploadAvatar($_FILES['avatar'], $user['id']);
+            
+            if ($result['status']) {
+                $_SESSION['success'] = $result['message'];
+                // Cập nhật thông tin avatar trong session nếu cần
+                if (isset($_SESSION['user'])) {
+                    $_SESSION['user']['avatar'] = $result['filename'];
+                }
+            } else {
+                $_SESSION['error'] = $result['message'];
+            }
+        } else {
+            $_SESSION['error'] = "Không có file được tải lên.";
+        }
+        
+        $this->redirect('user/profile');
+    }
 }
 ?>

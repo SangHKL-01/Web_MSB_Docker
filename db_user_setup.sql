@@ -1,9 +1,9 @@
--- Script thiết lập database db_web
+-- Script thiết lập database db_user
 -- Tạo database nếu chưa tồn tại
-CREATE DATABASE IF NOT EXISTS db_web;
+CREATE DATABASE IF NOT EXISTS db_user;
 
 -- Sử dụng database
-USE db_web;
+USE db_user;
 
 -- Tạo bảng users
 CREATE TABLE IF NOT EXISTS users (
@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
     gioi_tinh VARCHAR(10),
     phone VARCHAR(20),
     address VARCHAR(255),
+    avatar VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -33,4 +34,4 @@ VALUES
 ON DUPLICATE KEY UPDATE updated_at = NOW();
 
 -- Thông báo hoàn thành
-SELECT 'Thiết lập database db_web và bảng users thành công!' AS Message; 
+SELECT 'Thiết lập database db_user và bảng users thành công!' AS Message; 
