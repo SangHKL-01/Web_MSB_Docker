@@ -54,13 +54,18 @@ class UserController extends BaseController {
             $password = $postData['password'];
             $email = $postData['email'];
             
-            // kiểm tra xem user đã tồn tại chưa.
+            // kiểm tra xem user và email đã tồn tại chưa.
             $user = $this->userModel->Get_user($username);
+            $existingEmail = $this->userModel->getByField('email', $email);
 
             if ($user) {
                 $error = "Tài khoản đã tồn tại";
                 $this->view('user/register', ['error' => $error]);
-            } else {
+            }elseif ($existingEmail) {
+                $error = "Email đã tồn tại";
+                $this->view('user/register', ['error' => $error]);
+            } 
+            else {
 
                 $result = $this->userModel->register($username, $password, $email);
                 if ($result) {

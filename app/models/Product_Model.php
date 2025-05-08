@@ -149,6 +149,7 @@ class Product_Model extends BaseModel {
         return true;
     }
     
+    // Lấy sản phẩm theo ID
     public function Get_product($id) {
         return $this->getById($id);
     }
@@ -739,6 +740,50 @@ class Product_Model extends BaseModel {
         } else {
             error_log("Error querying order details: " . $conn->error);
             return [];
+        }
+    }
+    public function updateProductQuantity($product_id, $quantity) {
+        try {
+            // Sử dụng kết nối từ Database class
+            $productDb = Database::getProductInstance();
+            $conn = $productDb->getConnection();
+            
+            if (!$conn) {
+                error_log("Database connection error in updateProductQuantity");
+                return false;
+            }
+            
+            // Escape dữ liệu
+            $product_id = $conn->real_escape_string($product_id);
+            $quantity = (int)$quantity; // Đảm bảo số lượng là số nguyên
+            
+            // Lấy số lượng hiện tại của sản phẩm (từ cột stock)
+            $query = "SELECT stock FROM products WHERE id = '$product_id' LIMIT 1";
+            $result = $conn->query($query);
+            
+            if ($result && $result->num_rows > 0) {
+                $product = $result->fetch_assoc();
+                
+                // Tính toán số lượng mới (số lượng hiện tại - số lượng đã mua)
+                $new_quantity = max(0, $product['stock'] - $quantity);
+                
+                // Cập nhật số lượng mới vào cơ sở dữ liệu (cột stock)
+                $updateSql = "UPDATE products SET stock = '$new_quantity' WHERE id = '$product_id'";
+                $updateResult = $conn->query($updateSql);
+                
+                if (!$updateResult) {
+                    error_log("SQL Error in updateProductQuantity: " . $conn->error);
+                    error_log("SQL Query: " . $updateSql);
+                    return false;
+                }
+                
+                return true;
+            }
+            return false;
+        } catch (Exception $e) {
+            // Ghi log lỗi nếu cần
+            error_log("Lỗi cập nhật số lượng sản phẩm: " . $e->getMessage());
+            return false;
         }
     }
 }

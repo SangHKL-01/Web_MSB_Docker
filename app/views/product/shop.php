@@ -49,12 +49,20 @@
           <li><a href="index.php?controller=Home&action=contact">Liên Hệ</a></li>
           <li><a href="index.php?controller=Product&action=gio_hang">Giỏ Hàng <span id="cart-count">(<?= isset($cartItemCount) ? $cartItemCount : 0 ?>)</span></a></li>
           <?php
-          if (isset($_SESSION['user'])) {
-            echo '<li><a href="index.php?controller=User&action=logout">Đăng Xuất</a></li>';
-          } else {
-            echo '<li><a href="index.php?controller=User&action=login">Đăng Nhập</a></li>';
-          }
-          ?>
+                    if (isset($_SESSION['user'])) {
+                        echo '<li>
+                                <a href="index.php?controller=user&action=profile">
+                                <img src="http://localhost/WEB_MSB/public/assets/images/avatar.jpg" alt="Profile" width="40" style="border-radius: 50%; vertical-align: middle;" />
+                                </a>
+                            </li>';
+                    } else {
+                        echo '<li>
+                                <a href="index.php?controller=user&action=login">
+                                <img src="http://localhost/WEB_MSB/public/assets/images/avatar_md.jpg" alt="" width="30" style="border-radius: 50%; vertical-align: middle;" />
+                                </a>
+                            </li>';
+                    }
+                    ?>
         </ul>
             </nav>
         </div>
@@ -90,7 +98,7 @@
         <!-- Thêm các danh mục phổ biến -->
         <div class="popular-tags">
             <span>Phổ biến:</span>
-            <a href="index.php?controller=Product&action=search&keyword=labtop">labtop</a>
+            <a href="index.php?controller=Product&action=search&keyword=laptop">laptop</a>
             <a href="index.php?controller=Product&action=search&keyword=apple watch">apple watch</a>
             <a href="index.php?controller=Product&action=search&keyword=smartphone">smartphone</a>
         </div>

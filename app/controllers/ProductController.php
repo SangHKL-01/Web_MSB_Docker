@@ -279,6 +279,11 @@ class ProductController extends BaseController {
                     ];
 
                     $this->productModel->createOrderDetail($order_detail_data);
+                    
+                    // Cập nhật số lượng sản phẩm trong kho sau khi đặt hàng
+                    if (isset($item['product_id']) && $item['product_id']) {
+                        $this->productModel->updateProductQuantity($item['product_id'], $item['quantity']);
+                    }
                 }
 
                 // Xóa giỏ hàng sau khi đặt hàng thành công
@@ -299,7 +304,7 @@ class ProductController extends BaseController {
         $this->view('product/checkout', ['products' => $cart_items]);
     }
     
-    // Phương thức này duy trì tương thích ngược với các liên kết cũ
+    // Phương thức này duy trì với các liên kết cũ
     public function details_product() {
         $queryData = $this->getQueryData();
         
@@ -338,6 +343,125 @@ class ProductController extends BaseController {
         } else {
             $this->redirect('product/index');
         }
+    } 
+    // Chức năng mua ngay - mua sản phẩm trực tiếp không qua giỏ hàng
+    public function buy_now() {
+        $this->requireLogin();
+        
+        if (!$this->isLoggedIn()) {
+            $_SESSION['error'] = "Vui lòng đăng nhập để tiếp tục thanh toán";
+            $this->redirect('user/login');
+            exit;
+        }
+
+        $queryData = $this->getQueryData();
+        $product_id = isset($queryData['id']) ? $queryData['id'] : null;
+        $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 1;
+        
+        if (!$product_id) {
+            $_SESSION['error'] = "Không tìm thấy sản phẩm";
+            $this->redirect('product/index');
+            exit;
+        }
+        
+        // Lấy thông tin sản phẩm
+        $product = $this->productModel->Get_product($product_id);
+        
+        if (!$product) {
+            $_SESSION['error'] = "Không tìm thấy sản phẩm";
+            $this->redirect('product/index');
+            exit;
+        }
+        
+        // Kiểm tra số lượng tồn kho
+        if ($product['stock'] < $quantity) {
+            $_SESSION['error'] = "Số lượng sản phẩm trong kho không đủ. Hiện chỉ còn {$product['stock']} sản phẩm.";
+            $this->redirect("index.php?controller=product&action=detail&id={$product_id}");
+            exit;
+        }
+        
+        $user = $this->getLoggedInUser();
+        $user_id = $user['id'];
+        
+        // Tạo mảng sản phẩm để hiển thị trong trang thanh toán
+        $buy_now_product = [
+            'id' => $product['id'],
+            'product_id' => $product['id'],
+            'name' => $product['name'],
+            'product_name' => $product['name'],
+            'quantity' => $quantity,
+            'price' => $product['price'],
+            'image' => $product['image']
+        ];
+        
+        // Lưu thông tin sản phẩm mua ngay vào session
+        $_SESSION['buy_now_product'] = $buy_now_product;
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
+            // Xử lý thanh toán tương tự như phương thức checkout
+            $customer_name = isset($_POST['fullname']) ? $_POST['fullname'] : '';
+            $email = isset($_POST['email']) ? $_POST['email'] : '';
+            $phone = isset($_POST['phone']) ? $_POST['phone'] : '';
+            $address = isset($_POST['address']) ? $_POST['address'] : '';
+            $payment_method = isset($_POST['payment_method']) ? $_POST['payment_method'] : 'cod';
+            $notes = isset($_POST['notes']) ? $_POST['notes'] : '';
+            
+            // Kiểm tra thông tin người dùng
+            if (empty($customer_name) || empty($phone) || empty($address)) {
+                $_SESSION['error'] = "Vui lòng điền đầy đủ thông tin bắt buộc.";
+                $this->redirect('index.php?controller=product&action=buy_now&id=' . $product_id);
+                exit;
+            }
+            
+            // Tính tổng tiền
+            $total_amount = $buy_now_product['price'] * $buy_now_product['quantity'];
+            
+            // Tạo đơn hàng mới
+            $order_data = [
+                'user_id' => $user_id,
+                'customer_name' => $customer_name,
+                'customer_phone' => $phone,
+                'customer_address' => $address,
+                'email' => $email,
+                'total_amount' => $total_amount,
+                'payment_method' => $payment_method,
+                'notes' => $notes
+            ];
+            
+            $order_id = $this->productModel->createOrder($order_data);
+            
+            if ($order_id) {
+                // Tạo chi tiết đơn hàng
+                $order_detail_data = [
+                    'order_id' => $order_id,
+                    'product_name' => $buy_now_product['name'],
+                    'quantity' => $buy_now_product['quantity'],
+                    'price' => $buy_now_product['price'],
+                    'product_id' => $buy_now_product['product_id']
+                ];
+                
+                $this->productModel->createOrderDetail($order_detail_data);
+                
+                // Cập nhật số lượng sản phẩm trong kho
+                $this->productModel->updateProductQuantity($buy_now_product['product_id'], $buy_now_product['quantity']);
+                
+                // Xóa thông tin sản phẩm mua ngay khỏi session
+                unset($_SESSION['buy_now_product']);
+                
+                // Lưu ID đơn hàng vừa tạo để hiển thị trong trang cảm ơn
+                $_SESSION['last_order_id'] = $order_id;
+                $_SESSION['success'] = "Đặt hàng thành công.";
+                $this->redirect('index.php?controller=product&action=thank_you');
+                exit;
+            } else {
+                $_SESSION['error'] = "Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.";
+                $this->redirect('index.php?controller=product&action=buy_now&id=' . $product_id);
+                exit;
+            }
+        }
+        
+        // Hiển thị trang thanh toán với sản phẩm mua ngay
+        $this->view('product/buy_now', ['product' => $buy_now_product]);
     }
     
     // Trang cảm ơn sau khi đặt hàng thành công

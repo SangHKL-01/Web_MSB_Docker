@@ -96,8 +96,15 @@
             <input type="text" name="keyword" placeholder="Tìm kiếm sản phẩm..." class="search-input">
             <button type="submit" class="search-button">🔍 Tìm kiếm</button>
         </form>
+                <!-- Thêm các danh mục phổ biến -->
+        <div class="popular-tags">
+            <span>Phổ biến:</span>
+            <a href="index.php?controller=Product&action=search&keyword=laptop">laptop</a>
+            <a href="index.php?controller=Product&action=search&keyword=apple watch">apple watch</a>
+            <a href="index.php?controller=Product&action=search&keyword=smartphone">smartphone</a>
+        </div>   
     </div>
-
+ 
     <!-- Main Content -->
     <main class="main">
         <!-- Newest Products Section -->
@@ -148,7 +155,7 @@
                                 <input type="hidden" name="quantity" value="1">
                                 <button type="submit" class="btn btn-sm btn-secondary">Thêm vào Giỏ</button>
                             </form>
-                            <a href="index.php?controller=Product&action=checkout&id=<?= $product['id'] ?>" class="btn btn-sm btn-accent">Mua ngay</a>
+                            <a href="index.php?controller=Product&action=buy_now&id=<?= $product['id'] ?>" class="btn btn-sm btn-accent">Mua ngay</a>
                         </div>
                     </div>
                 </div>
