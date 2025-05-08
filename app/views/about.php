@@ -53,7 +53,7 @@
                     <li><a href="index.php?controller=Product&action=index">Sản Phẩm</a></li>
                     <li><a href="index.php?controller=Home&action=about" class="active">Giới Thiệu</a></li>
                     <li><a href="index.php?controller=Home&action=contact">Liên Hệ</a></li>
-                    <li><a href="index.php?controller=Product&action=gio_hang">Giỏ Hàng <span id="cart-count">(0)</span></a></li>
+                    <li><a href="index.php?controller=Product&action=gio_hang">Giỏ Hàng <span id="cart-count">(<?= isset($cartItemCount) ? $cartItemCount : 0 ?>)</span></a></li>
                     <?php
                     if (isset($_SESSION['user'])) {
                         echo '<li>
@@ -112,12 +112,5 @@
         </div>
     </footer>
 
-    <!-- Script to update cart count dynamically -->
-    <script>
-        // Kiểm tra giỏ hàng trong session và cập nhật số lượng
-        if (sessionStorage.getItem("cartCount")) {
-            document.getElementById("cart-count").textContent = `(${sessionStorage.getItem("cartCount")})`;
-        }
-    </script>
 </body>
 </html>

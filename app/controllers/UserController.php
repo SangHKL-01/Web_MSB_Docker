@@ -64,7 +64,10 @@ class UserController extends BaseController {
             }elseif ($existingEmail) {
                 $error = "Email đã tồn tại";
                 $this->view('user/register', ['error' => $error]);
-            } 
+            } elseif (strlen($password) < 6) {
+                $error = "Mật khẩu phải có ít nhất 6 ký tự";
+                $this->view('user/register', ['error' => $error]);
+            }
             else {
 
                 $result = $this->userModel->register($username, $password, $email);

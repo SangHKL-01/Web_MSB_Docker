@@ -82,6 +82,10 @@ class ProductController extends BaseController {
                     // Đặt thông báo thành công vào session
                     $_SESSION['cart_message'] = "Đã thêm <strong>{$quantity}</strong> sản phẩm <strong>{$product['name']}</strong> vào giỏ hàng!";
                     
+                    // Lấy số lượng giỏ hàng mới và cập nhật sessionStorage
+                    $cartCount = $this->getCartItemCount();
+                    echo "<script>sessionStorage.setItem('cartCount', {$cartCount});</script>";
+                    
                     // Chuyển hướng trở lại trang trước đó
                     header("Location: $referer");
                     exit();
@@ -230,6 +234,7 @@ class ProductController extends BaseController {
             exit;
         }
 
+        // Trong phương thức checkout()
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Lấy thông tin của người dùng từ form checkout
             $customer_name = isset($_POST['fullname']) ? $_POST['fullname'] : '';
@@ -238,14 +243,28 @@ class ProductController extends BaseController {
             $address = isset($_POST['address']) ? $_POST['address'] : '';
             $payment_method = isset($_POST['payment_method']) ? $_POST['payment_method'] : 'cod';
             $notes = isset($_POST['notes']) ? $_POST['notes'] : '';
-
+        
             // Kiểm tra thông tin người dùng
             if (empty($customer_name) || empty($phone) || empty($address)) {
                 $_SESSION['error'] = "Vui lòng điền đầy đủ thông tin bắt buộc.";
                 $this->redirect('index.php?controller=product&action=checkout');
                 exit;
             }
-
+            
+            // Kiểm tra số điện thoại chỉ chứa số
+            if (!preg_match('/^\d+$/', $phone)) {
+                $_SESSION['error'] = "Số điện thoại chỉ được chứa chữ số.";
+                $this->redirect('index.php?controller=product&action=checkout');
+                exit;
+            }
+            
+            // Kiểm tra độ dài số điện thoại
+            if (strlen($phone) < 10 || strlen($phone) > 11) {
+                $_SESSION['error'] = "Số điện thoại phải có 10-11 chữ số.";
+                $this->redirect('index.php?controller=product&action=checkout');
+                exit;
+            }
+            
             // Tính tổng tiền từ giỏ hàng
             foreach ($cart_items as $item) {
                 $total_amount += $item['price'] * $item['quantity'];
@@ -288,6 +307,9 @@ class ProductController extends BaseController {
 
                 // Xóa giỏ hàng sau khi đặt hàng thành công
                 $this->productModel->clearCart($user_id);
+                
+                // Cập nhật sessionStorage để hiển thị số lượng giỏ hàng = 0
+                echo "<script>sessionStorage.setItem('cartCount', 0);</script>";
 
                 // Lưu ID đơn hàng vừa tạo để hiển thị trong trang cảm ơn
                 $_SESSION['last_order_id'] = $order_id;
@@ -301,10 +323,11 @@ class ProductController extends BaseController {
             }
         }
 
+        // Hiển thị trang thanh toán nếu không phải là POST request
         $this->view('product/checkout', ['products' => $cart_items]);
     }
     
-    // Phương thức này duy trì với các liên kết cũ
+    // Phương thức này duy trình với các liên kết cũ
     public function details_product() {
         $queryData = $this->getQueryData();
         
@@ -356,7 +379,7 @@ class ProductController extends BaseController {
 
         $queryData = $this->getQueryData();
         $product_id = isset($queryData['id']) ? $queryData['id'] : null;
-        $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 1;
+        $quantity = isset($queryData['quantity']) ? (int)$queryData['quantity'] : 1;
         
         if (!$product_id) {
             $_SESSION['error'] = "Không tìm thấy sản phẩm";
@@ -397,6 +420,7 @@ class ProductController extends BaseController {
         // Lưu thông tin sản phẩm mua ngay vào session
         $_SESSION['buy_now_product'] = $buy_now_product;
         
+        // Trong phương thức buy_now()
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
             // Xử lý thanh toán tương tự như phương thức checkout
             $customer_name = isset($_POST['fullname']) ? $_POST['fullname'] : '';
@@ -413,9 +437,23 @@ class ProductController extends BaseController {
                 exit;
             }
             
+            // Kiểm tra số điện thoại chỉ chứa số
+            if (!preg_match('/^\d+$/', $phone)) {
+                $_SESSION['error'] = "Số điện thoại chỉ được chứa chữ số.";
+                $this->redirect('index.php?controller=product&action=buy_now&id=' . $product_id);
+                exit;
+            }
+            
+            // Kiểm tra độ dài số điện thoại
+            if (strlen($phone) < 10 || strlen($phone) > 11) {
+                $_SESSION['error'] = "Số điện thoại phải có 10-11 chữ số.";
+                $this->redirect('index.php?controller=product&action=buy_now&id=' . $product_id);
+                exit;
+            }
+            
             // Tính tổng tiền
             $total_amount = $buy_now_product['price'] * $buy_now_product['quantity'];
-            
+
             // Tạo đơn hàng mới
             $order_data = [
                 'user_id' => $user_id,
@@ -427,11 +465,11 @@ class ProductController extends BaseController {
                 'payment_method' => $payment_method,
                 'notes' => $notes
             ];
-            
+
             $order_id = $this->productModel->createOrder($order_data);
-            
+
             if ($order_id) {
-                // Tạo chi tiết đơn hàng
+                // Tạo chi tiết đơn hàng cho sản phẩm mua ngay
                 $order_detail_data = [
                     'order_id' => $order_id,
                     'product_name' => $buy_now_product['name'],
@@ -439,12 +477,12 @@ class ProductController extends BaseController {
                     'price' => $buy_now_product['price'],
                     'product_id' => $buy_now_product['product_id']
                 ];
-                
+
                 $this->productModel->createOrderDetail($order_detail_data);
                 
-                // Cập nhật số lượng sản phẩm trong kho
+                // Cập nhật số lượng sản phẩm trong kho sau khi đặt hàng
                 $this->productModel->updateProductQuantity($buy_now_product['product_id'], $buy_now_product['quantity']);
-                
+
                 // Xóa thông tin sản phẩm mua ngay khỏi session
                 unset($_SESSION['buy_now_product']);
                 

@@ -105,8 +105,8 @@ class AdminController extends BaseController {
         $order_id = $postData['order_id'];
         $status = $postData['status'];
         
-        // Cập nhật trạng thái đơn hàng trong database
-        $result = $this->updateOrder($order_id, ['status' => $status]);
+        // Sử dụng phương thức updateOrder từ model
+        $result = $this->productModel->updateOrder($order_id, ['status' => $status]);
         
         if ($result) {
             $_SESSION['success'] = "Đã cập nhật trạng thái đơn hàng thành công.";
@@ -114,7 +114,9 @@ class AdminController extends BaseController {
             $_SESSION['error'] = "Không thể cập nhật trạng thái đơn hàng.";
         }
         
-        $this->redirect('admin/orderDetail?id=' . $order_id);
+        // Sửa lại cách chuyển hướng để tránh lỗi
+        header("Location: index.php?controller=Admin&action=orderDetail&id=" . $order_id);
+        exit;
     }
     
     // Quản lý người dùng - liệt kê tất cả
@@ -159,6 +161,27 @@ class AdminController extends BaseController {
                     'data' => $postData
                 ]);
                 return;
+            }
+            
+            // Xác thực số điện thoại
+            if (!empty($postData['phone'])) {
+                // Kiểm tra số điện thoại chỉ chứa các ký tự số
+                if (!preg_match('/^[0-9]+$/', $postData['phone'])) {
+                    $this->view('admin/add_user', [
+                        'error' => 'Số điện thoại chỉ được chứa các ký tự số.',
+                        'data' => $postData
+                    ]);
+                    return;
+                }
+                
+                // Kiểm tra độ dài số điện thoại (10-11 số)
+                if (strlen($postData['phone']) < 10 || strlen($postData['phone']) > 11) {
+                    $this->view('admin/add_user', [
+                        'error' => 'Số điện thoại phải có 10-11 số.',
+                        'data' => $postData
+                    ]);
+                    return;
+                }
             }
             
             // Mã hóa mật khẩu
@@ -239,6 +262,27 @@ class AdminController extends BaseController {
                     'user' => $user
                 ]);
                 return;
+            }
+            
+            // Xác thực số điện thoại
+            if (!empty($postData['phone'])) {
+                // Kiểm tra số điện thoại chỉ chứa các ký tự số
+                if (!preg_match('/^[0-9]+$/', $postData['phone'])) {
+                    $this->view('admin/edit_user', [
+                        'error' => 'Số điện thoại chỉ được chứa các ký tự số.',
+                        'user' => array_merge($user, $postData)
+                    ]);
+                    return;
+                }
+                
+                // Kiểm tra độ dài số điện thoại (10-11 số)
+                if (strlen($postData['phone']) < 10 || strlen($postData['phone']) > 11) {
+                    $this->view('admin/edit_user', [
+                        'error' => 'Số điện thoại phải có 10-11 số.',
+                        'user' => array_merge($user, $postData)
+                    ]);
+                    return;
+                }
             }
             
             // Cập nhật dữ liệu người dùng
@@ -349,36 +393,5 @@ class AdminController extends BaseController {
         
         return $orders;
     }
-    
-    // Cập nhật thông tin đơn hàng
-    private function updateOrder($order_id, $data) {
-        // Sử dụng kết nối từ Database class
-        $productDb = Database::getProductInstance();
-        $conn = $productDb->getConnection();
-        
-        if (!$conn) {
-            error_log("Database connection error in updateOrder");
-            return false;
-        }
-        
-        // Tạo các cặp column=value cho câu lệnh SET
-        $setClause = [];
-        foreach ($data as $column => $value) {
-            $value = $conn->real_escape_string($value);
-            $setClause[] = "$column = '$value'";
-        }
-        $setClause = implode(', ', $setClause);
-        
-        $order_id = $conn->real_escape_string($order_id);
-        $sql = "UPDATE orders SET $setClause WHERE id = '$order_id'";
-        
-        $result = $conn->query($sql);
-        
-        if (!$result) {
-            error_log("Error updating order: " . $conn->error);
-            return false;
-        }
-        
-        return true;
-    }
-} 
+
+}

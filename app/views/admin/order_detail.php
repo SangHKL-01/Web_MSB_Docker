@@ -205,7 +205,6 @@
                 <li><a href="index.php?controller=Admin&action=index">Tổng Quan</a></li>
                 <li><a href="index.php?controller=Admin&action=orders" class="active">Đơn Hàng</a></li>
                 <li><a href="index.php?controller=Admin&action=users">Người Dùng</a></li>
-                <li><a href="index.php?controller=Product&action=index">Về Trang Chủ</a></li>
                 <li><a href="index.php?controller=User&action=logout">Đăng Xuất</a></li>
             </ul>
         </div>
@@ -318,7 +317,6 @@
                 <!-- Order Actions -->
                 <div class="order-actions">
                     <a href="index.php?controller=Admin&action=orders" class="btn btn-secondary">Quay lại danh sách</a>
-                    <a href="javascript:printOrder()" class="btn btn-primary">In đơn hàng</a>
                     <?php if ($order['status'] !== 'đã hủy' && $order['status'] !== 'hoàn thành'): ?>
                         <button class="btn btn-danger" onclick="confirmCancel()">Hủy đơn hàng</button>
                     <?php endif; ?>

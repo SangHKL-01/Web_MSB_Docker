@@ -379,9 +379,18 @@
               <button type="button" class="quantity-btn" onclick="increaseQuantity(<?= isset($product['stock']) ? $product['stock'] : 0 ?>)">+</button>
             </div>
             
-            <button type="submit" class="add-to-cart-btn" <?php if (!isset($product['stock']) || $product['stock'] <= 0) echo "disabled style='opacity: 0.6; cursor: not-allowed;'"; ?>>
-              <span class="cart-icon">🛒</span> Thêm vào giỏ hàng
-            </button>
+            <div class="flex space-x-4">
+              <button type="submit" class="add-to-cart-btn" <?php if (!isset($product['stock']) || $product['stock'] <= 0) echo "disabled style='opacity: 0.6; cursor: not-allowed;'"; ?>>
+                <span class="cart-icon">🛒</span> Thêm vào giỏ hàng
+              </button>
+              
+              <a href="index.php?controller=Product&action=buy_now&id=<?= $product['id'] ?>&quantity=1" 
+                 onclick="return updateBuyNowQuantity(this, <?= isset($product['stock']) ? $product['stock'] : 0 ?>)" 
+                 class="add-to-cart-btn" style="background-color: #e53e3e;" 
+                 <?php if (!isset($product['stock']) || $product['stock'] <= 0) echo "disabled style='opacity: 0.6; cursor: not-allowed; pointer-events: none;'"; ?>>
+                <span class="cart-icon">⚡</span> Mua ngay
+              </a>
+            </div>
           </form>
           
           <!-- Nút quay lại -->
@@ -456,29 +465,42 @@
     
     // Xử lý số lượng
     function decreaseQuantity() {
-      const input = document.getElementById('quantity');
-      const currentVal = parseInt(input.value);
-      if (currentVal > 1) {
-        input.value = currentVal - 1;
+      var quantityInput = document.getElementById('quantity');
+      var currentValue = parseInt(quantityInput.value);
+      if (currentValue > 1) {
+        quantityInput.value = currentValue - 1;
       }
     }
     
     function increaseQuantity(maxStock) {
-      const input = document.getElementById('quantity');
-      const currentVal = parseInt(input.value);
-      if (maxStock && currentVal < maxStock) {
-        input.value = currentVal + 1;
-      } else if (!maxStock) {
-        input.value = currentVal + 1;
+      var quantityInput = document.getElementById('quantity');
+      var currentValue = parseInt(quantityInput.value);
+      if (currentValue < maxStock) {
+        quantityInput.value = currentValue + 1;
       }
     }
     
-    // Hiệu ứng khi submit form
-    document.getElementById('add-to-cart-form').addEventListener('submit', function(e) {
-      const button = this.querySelector('button[type="submit"]');
-      button.innerHTML = '<span class="cart-icon">✓</span> Đang thêm...';
-      button.style.backgroundColor = '#48bb78';
-    });
+    function updateBuyNowQuantity(link, maxStock) {
+      var quantityInput = document.getElementById('quantity');
+      var currentValue = parseInt(quantityInput.value);
+      
+      // Kiểm tra số lượng hợp lệ
+      if (currentValue < 1) {
+        alert('Số lượng phải lớn hơn 0');
+        return false;
+      }
+      
+      if (currentValue > maxStock) {
+        alert('Số lượng không được vượt quá số lượng tồn kho');
+        return false;
+      }
+      
+      // Cập nhật URL với số lượng mới
+      var newHref = link.href.replace(/&quantity=\d+/, '&quantity=' + currentValue);
+      link.href = newHref;
+      
+      return true;
+    }
   </script>
 </body>
-</html> 
+</html>

@@ -80,8 +80,9 @@
         
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-          <input type="text" name="phone" required
+          <input type="text" name="phone" required pattern="[0-9]{10,11}" title="Số điện thoại phải chứa 10-11 chữ số" 
                  class="w-full border px-4 py-2 rounded-lg bg-white text-gray-800" />
+          <small class="text-gray-500">Vui lòng nhập số điện thoại từ 10-11 chữ số</small>
         </div>
         
         <div>
@@ -118,4 +119,4 @@
 </div>
 
 </body>
-</html> 
+</html>

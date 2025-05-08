@@ -786,4 +786,42 @@ class Product_Model extends BaseModel {
             return false;
         }
     }
+
+    // Cập nhật thông tin đơn hàng
+    public function updateOrder($order_id, $data) {
+        $productDb = Database::getProductInstance();
+        $conn = $productDb->getConnection();
+        
+        if (!$conn) {
+            error_log("Database connection error in updateOrder");
+            return false;
+        }
+        
+        // Escape dữ liệu
+        $order_id = $conn->real_escape_string($order_id);
+        
+        // Xây dựng câu lệnh SQL động dựa trên dữ liệu cần cập nhật
+        $updateFields = [];
+        foreach ($data as $key => $value) {
+            $key = $conn->real_escape_string($key);
+            $value = $conn->real_escape_string($value);
+            $updateFields[] = "`$key` = '$value'";
+        }
+        
+        if (empty($updateFields)) {
+            error_log("No fields to update for order ID: $order_id");
+            return false;
+        }
+        
+        $sql = "UPDATE orders SET " . implode(", ", $updateFields) . " WHERE id = '$order_id'";
+        
+        if ($conn->query($sql)) {
+            error_log("Successfully updated order ID: $order_id");
+            return true;
+        } else {
+            error_log("Error updating order: " . $conn->error);
+            error_log("SQL Query: " . $sql);
+            return false;
+        }
+    }
 }

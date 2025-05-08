@@ -206,12 +206,5 @@
         </div>
     </footer>
 
-    <!-- Script to update cart count dynamically -->
-    <script>
-        // Kiểm tra giỏ hàng trong session và cập nhật số lượng
-        if (sessionStorage.getItem("cartCount")) {
-            document.getElementById("cart-count").textContent = `(${sessionStorage.getItem("cartCount")})`;
-        }
-    </script>
 </body>
 </html>

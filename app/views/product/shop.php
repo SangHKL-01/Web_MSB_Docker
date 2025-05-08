@@ -142,7 +142,7 @@
                                 <input type="hidden" name="quantity" value="1">
                                 <button type="submit" class="btn btn-sm btn-secondary">Thêm vào Giỏ</button>
                             </form>
-                            <a href="index.php?controller=Product&action=checkout&id=<?= $product['id'] ?>" class="btn btn-sm btn-accent">Mua ngay</a>
+                            <a href="index.php?controller=Product&action=buy_now&id=<?= $product['id'] ?>" class="btn btn-sm btn-accent">Mua ngay</a>
                         </div>
                     </div>
                 </div>
@@ -171,11 +171,6 @@
 
     <!-- Script to update cart count dynamically -->
     <script>
-        // Kiểm tra giỏ hàng trong session và cập nhật số lượng
-        if (sessionStorage.getItem("cartCount")) {
-            document.getElementById("cart-count").textContent = `(${sessionStorage.getItem("cartCount")})`;
-        }
-        
         // Tự động ẩn thông báo sau 3 giây
         const alertElement = document.getElementById('cart-alert');
         if (alertElement) {

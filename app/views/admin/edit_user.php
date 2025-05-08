@@ -152,6 +152,15 @@
             color: #6c757d;
             margin-top: 5px;
         }
+        .form-input.error {
+            border-color: #dc3545;
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -163,7 +172,6 @@
                 <li><a href="index.php?controller=Admin&action=index">Tổng Quan</a></li>
                 <li><a href="index.php?controller=Admin&action=orders">Đơn Hàng</a></li>
                 <li><a href="index.php?controller=Admin&action=users" class="active">Người Dùng</a></li>
-                <li><a href="index.php?controller=Product&action=index">Về Trang Chủ</a></li>
                 <li><a href="index.php?controller=User&action=logout">Đăng Xuất</a></li>
             </ul>
         </div>
@@ -184,7 +192,7 @@
                     <p>Chỉnh sửa thông tin người dùng dưới đây.</p>
                 </div>
                 
-                <form method="POST" action="index.php?controller=Admin&action=editUser&id=<?= $user['id'] ?>">
+                <form method="POST" action="index.php?controller=Admin&action=editUser&id=<?= $user['id'] ?>" id="editUserForm">
                     <div class="form-group">
                         <label for="username" class="form-label required">Tên đăng nhập</label>
                         <input type="text" id="username" name="username" class="form-input" required
@@ -213,6 +221,7 @@
                         <label for="phone" class="form-label">Số điện thoại</label>
                         <input type="text" id="phone" name="phone" class="form-input"
                                value="<?= htmlspecialchars($user['phone'] ?? '') ?>">
+                        <div id="phoneError" class="error-message">Số điện thoại phải chỉ chứa các ký tự số và có 10-11 số.</div>
                     </div>
                     
                     <div class="form-group">
@@ -236,5 +245,62 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const phoneInput = document.getElementById('phone');
+            const phoneError = document.getElementById('phoneError');
+            const form = document.getElementById('editUserForm');
+
+            // Hàm kiểm tra số điện thoại
+            function validatePhone(phone) {
+                // Kiểm tra số điện thoại chỉ chứa các ký tự số
+                const numberPattern = /^[0-9]+$/;
+                if (phone && !numberPattern.test(phone)) {
+                    return false;
+                }
+                
+                // Kiểm tra độ dài số điện thoại (10-11 số)
+                if (phone && (phone.length < 10 || phone.length > 11)) {
+                    return false;
+                }
+                
+                return true;
+            }
+
+            // Kiểm tra khi người dùng nhập
+            phoneInput.addEventListener('input', function() {
+                const phoneValue = this.value.trim();
+                
+                if (phoneValue === '') {
+                    // Nếu trường rỗng, không hiển thị lỗi
+                    phoneInput.classList.remove('error');
+                    phoneError.style.display = 'none';
+                    return;
+                }
+                
+                if (!validatePhone(phoneValue)) {
+                    phoneInput.classList.add('error');
+                    phoneError.style.display = 'block';
+                } else {
+                    phoneInput.classList.remove('error');
+                    phoneError.style.display = 'none';
+                }
+            });
+
+            // Kiểm tra khi submit form
+            form.addEventListener('submit', function(event) {
+                const phoneValue = phoneInput.value.trim();
+                
+                // Nếu có nhập số điện thoại và không hợp lệ
+                if (phoneValue !== '' && !validatePhone(phoneValue)) {
+                    event.preventDefault(); // Ngăn form submit
+                    phoneInput.classList.add('error');
+                    phoneError.style.display = 'block';
+                    phoneInput.focus();
+                }
+            });
+        });
+    </script>
 </body>
-</html> 
+</html>

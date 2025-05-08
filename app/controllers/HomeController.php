@@ -70,12 +70,16 @@ public function about() {
     $message = isset($queryData['message']) ? htmlspecialchars($queryData['message'], ENT_QUOTES, 'UTF-8') : '';
     $name = isset($queryData['name']) ? htmlspecialchars($queryData['name'], ENT_QUOTES, 'UTF-8') : '';
     
+    // lấy số lương sản phẩm trong giỏ hàng
+    $cartItemCount = $this->getCartItemCount();
+
     // Thông tin giới thiệu
     $aboutInfo = [
         'title' => 'Giới thiệu về chúng tôi',
         'content' => 'Chúng tôi là một công ty chuyên cung cấp các sản phẩm chất lượng cao với giá cả hợp lý.',
         'message' => $message,
-        'name' => $name
+        'name' => $name,
+        'cartItemCount' => $cartItemCount
     ];
     
     $this->view('about', $aboutInfo);
@@ -84,8 +88,13 @@ public function about() {
     // contact
     // Chức năng liên hệ đơn giản hóa - chỉ hiển thị thông tin
     public function contact() {
+        // Lấy số lượng sản phẩm trong giỏ hàng
+        $cartItemCount = $this->getCartItemCount();
+        
         // Hiển thị trang liên hệ với thông tin cơ bản
-        $this->view('contact', []);
+        $this->view('contact', [
+            'cartItemCount' => $cartItemCount // Thêm biến cartItemCount vào mảng
+        ]);
     }
     // Lỗ hổng: Local File Inclusion
     public function page() {
