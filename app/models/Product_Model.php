@@ -753,12 +753,15 @@ class Product_Model extends BaseModel {
                 return false;
             }
             
+            // Bắt đầu transaction
+            $conn->begin_transaction();
+            
             // Escape dữ liệu
             $product_id = $conn->real_escape_string($product_id);
             $quantity = (int)$quantity; // Đảm bảo số lượng là số nguyên
             
-            // Lấy số lượng hiện tại của sản phẩm (từ cột stock)
-            $query = "SELECT stock FROM products WHERE id = '$product_id' LIMIT 1";
+            // Lấy số lượng hiện tại của sản phẩm (từ cột stock) với khóa FOR UPDATE
+            $query = "SELECT stock FROM products WHERE id = '$product_id' LIMIT 1 FOR UPDATE";
             $result = $conn->query($query);
             
             if ($result && $result->num_rows > 0) {
@@ -772,17 +775,28 @@ class Product_Model extends BaseModel {
                 $updateResult = $conn->query($updateSql);
                 
                 if (!$updateResult) {
+                    // Rollback nếu có lỗi
+                    $conn->rollback();
                     error_log("SQL Error in updateProductQuantity: " . $conn->error);
                     error_log("SQL Query: " . $updateSql);
                     return false;
                 }
                 
+                // Commit transaction
+                $conn->commit();
                 return true;
+            } else {
+                // Rollback nếu không tìm thấy sản phẩm
+                $conn->rollback();
+                error_log("Product not found in updateProductQuantity: " . $product_id);
+                return false;
             }
-            return false;
         } catch (Exception $e) {
-            // Ghi log lỗi nếu cần
-            error_log("Lỗi cập nhật số lượng sản phẩm: " . $e->getMessage());
+            // Rollback nếu có exception
+            if (isset($conn)) {
+                $conn->rollback();
+            }
+            error_log("Exception in updateProductQuantity: " . $e->getMessage());
             return false;
         }
     }

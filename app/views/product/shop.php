@@ -138,11 +138,15 @@
                         <p class="product-price"><?= number_format($product['price'] ?? 0, 0, ',', '.') ?> VNĐ</p>
                         <div class="product-actions">
                             <a href="index.php?controller=Product&action=details_product&id=<?= $product['id'] ?>" class="btn btn-sm btn-primary">Xem Chi Tiết</a>
-                            <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>">
-                                <input type="hidden" name="quantity" value="1">
-                                <button type="submit" class="btn btn-sm btn-secondary">Thêm vào Giỏ</button>
-                            </form>
-                            <a href="index.php?controller=Product&action=buy_now&id=<?= $product['id'] ?>" class="btn btn-sm btn-accent">Mua ngay</a>
+                            <?php if ($product['stock'] > 0): ?>
+                                <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn btn-sm btn-secondary">Thêm vào Giỏ</button>
+                                </form>
+                                <a href="index.php?controller=Product&action=buy_now&id=<?= $product['id'] ?>" class="btn btn-sm btn-accent">Mua ngay</a>
+                            <?php else: ?>
+                                <span class="btn btn-sm" style="background-color: #ccc; cursor: not-allowed;">Hết hàng</span>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

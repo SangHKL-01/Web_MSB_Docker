@@ -427,10 +427,16 @@
               <?= number_format($item['price'], 0, ',', '.') ?>₫
             </p>
             <div class="mt-4">
+              <?php if (isset($item['stock']) && $item['stock'] > 0): ?>
               <a href="index.php?controller=product&action=insert_cart&id=<?= $item['id'] ?>"
                  class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition block text-center">
                 Thêm vào giỏ
               </a>
+              <?php else: ?>
+              <span class="bg-gray-300 text-gray-600 px-4 py-2 rounded-lg block text-center">
+                Hết hàng
+              </span>
+              <?php endif;?>
             </div>
           </div>
         </div>
@@ -491,7 +497,7 @@
       }
       
       if (currentValue > maxStock) {
-        alert('Số lượng không được vượt quá số lượng tồn kho');
+        alert('Sản phẩm đã hết hàng');
         return false;
       }
       
