@@ -32,6 +32,117 @@
             from { opacity: 1; }
             to { opacity: 0; }
         }
+        #buyNowModal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0; top: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.35);
+            align-items: center; justify-content: center;
+            transition: background 0.2s;
+        }
+        #buyNowModal.active {
+            display: flex;
+            animation: fadeInModalBg 0.2s;
+        }
+        @keyframes fadeInModalBg {
+            from { background: rgba(0,0,0,0); }
+            to { background: rgba(0,0,0,0.35); }
+        }
+        #buyNowModal .modal-content {
+            background: #fff;
+            padding: 32px 28px 24px 28px;
+            border-radius: 16px;
+            min-width: 320px;
+            max-width: 95vw;
+            margin: auto;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            animation: modalPopIn 0.25s;
+        }
+        @keyframes modalPopIn {
+            from { transform: scale(0.85); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        #buyNowModal h3 {
+            margin-top: 0;
+            margin-bottom: 18px;
+            font-size: 1.25em;
+            font-weight: 600;
+            text-align: center;
+        }
+        #buyNowModal input[type=number] {
+            width: 90px;
+            font-size: 1.5em;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            text-align: center;
+            margin-bottom: 10px;
+            outline: none;
+            transition: border 0.2s;
+        }
+        #buyNowModal input[type=number]:focus {
+            border: 1.5px solid #007bff;
+        }
+        #buyNowModal .modal-actions {
+            margin-top: 18px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+        #buyNowModal .btn {
+            min-width: 90px;
+            font-size: 1em;
+            border-radius: 6px;
+            padding: 7px 0;
+        }
+        #closeBuyNowModal {
+            background: #eee;
+            color: #333;
+            border: none;
+        }
+        #closeBuyNowModal:hover {
+            background: #ddd;
+        }
+        #buyNowModal .close-x {
+            position: absolute;
+            top: 10px; right: 14px;
+            font-size: 1.3em;
+            color: #888;
+            cursor: pointer;
+            transition: color 0.2s;
+            font-weight: bold;
+        }
+        #buyNowModal .close-x:hover {
+            color: #e74c3c;
+        }
+        #buyNowModal .modal-product-img {
+            width: 90px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        #buyNowModal .modal-product-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+        #buyNowModal .modal-product-desc {
+            font-size: 0.98em;
+            color: #555;
+            margin-bottom: 12px;
+            text-align: center;
+            max-height: 60px;
+            overflow: auto;
+        }
     </style>
 </head>
 <body>
@@ -129,7 +240,7 @@
             <?php if (!empty($products)): ?>
             <div class="product-grid">
                 <?php foreach ($products as $product): ?>
-                <div class="product-card">
+                <div class="product-card" data-stock="<?= isset($product['stock']) ? $product['stock'] : 9999 ?>">
                     <div class="product-img">
                         <img src="http://localhost/WEB_MSB/public/assets/images/<?= isset($product['image']) ? $product['image'] : 'product_default.jpg' ?>" alt="<?= htmlspecialchars($product['name'] ?? 'Sản phẩm') ?>">
                     </div>
@@ -138,15 +249,11 @@
                         <p class="product-price"><?= number_format($product['price'] ?? 0, 0, ',', '.') ?> VNĐ</p>
                         <div class="product-actions">
                             <a href="index.php?controller=Product&action=details_product&id=<?= $product['id'] ?>" class="btn btn-sm btn-primary">Xem Chi Tiết</a>
-                            <?php if ($product['stock'] > 0): ?>
-                                <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>">
-                                    <input type="hidden" name="quantity" value="1">
-                                    <button type="submit" class="btn btn-sm btn-secondary">Thêm vào Giỏ</button>
-                                </form>
-                                <a href="index.php?controller=Product&action=buy_now&id=<?= $product['id'] ?>" class="btn btn-sm btn-accent">Mua ngay</a>
-                            <?php else: ?>
-                                <span class="btn btn-sm" style="background-color: #ccc; cursor: not-allowed;">Hết hàng</span>
-                            <?php endif; ?>
+                            <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>">
+                                <input type="hidden" name="quantity" value="1">
+                                <button type="submit" class="btn btn-sm btn-secondary">Thêm vào Giỏ</button>
+                            </form>
+                            <button type="button" class="btn btn-sm btn-accent buy-now-btn" data-product-id="<?= $product['id'] ?>">Mua ngay</button>
                         </div>
                     </div>
                 </div>
@@ -175,6 +282,11 @@
 
     <!-- Script to update cart count dynamically -->
     <script>
+        // Kiểm tra giỏ hàng trong session và cập nhật số lượng
+        if (sessionStorage.getItem("cartCount")) {
+            document.getElementById("cart-count").textContent = `(${sessionStorage.getItem("cartCount")})`;
+        }
+        
         // Tự động ẩn thông báo sau 3 giây
         const alertElement = document.getElementById('cart-alert');
         if (alertElement) {
@@ -182,6 +294,105 @@
                 alertElement.style.display = 'none';
             }, 3000);
         }
+    </script>
+
+    <!-- Modal nhập số lượng cho Mua ngay -->
+    <div id="buyNowModal">
+        <div class="modal-content">
+            <span class="close-x" id="closeBuyNowModalX">&times;</span>
+            <img id="modalProductImg" class="modal-product-img" src="" alt="Ảnh sản phẩm">
+            <div class="modal-product-name" id="modalProductName"></div>
+            <div class="modal-product-desc" id="modalProductDesc"></div>
+            <h3>Nhập số lượng muốn mua</h3>
+            <form id="buyNowForm" style="margin-bottom:0; text-align:center;">
+                <input type="number" id="buyNowQuantity" name="quantity" value="1" min="1">
+                <input type="hidden" id="buyNowProductId" name="id" value="">
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-sm btn-accent">Xác nhận</button>
+                    <button type="button" id="closeBuyNowModal" class="btn btn-sm">Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+    // Lấy dữ liệu sản phẩm từ HTML để truyền vào modal
+    var productData = {};
+    document.querySelectorAll('.buy-now-btn').forEach(function(btn) {
+        var card = btn.closest('.product-card');
+        if (card) {
+            var id = btn.getAttribute('data-product-id');
+            var img = card.querySelector('img');
+            var name = card.querySelector('.product-title');
+            var desc = card.querySelector('.product-info p');
+            productData[id] = {
+                img: img ? img.src : '',
+                name: name ? name.textContent : '',
+                desc: desc ? desc.textContent : ''
+            };
+        }
+    });
+    var buyNowBtns = document.querySelectorAll('.buy-now-btn');
+    var buyNowModal = document.getElementById('buyNowModal');
+    var buyNowForm = document.getElementById('buyNowForm');
+    var buyNowProductId = document.getElementById('buyNowProductId');
+    var buyNowQuantity = document.getElementById('buyNowQuantity');
+    var closeBuyNowModal = document.getElementById('closeBuyNowModal');
+    var closeBuyNowModalX = document.getElementById('closeBuyNowModalX');
+    var modalProductImg = document.getElementById('modalProductImg');
+    var modalProductName = document.getElementById('modalProductName');
+    var modalProductDesc = document.getElementById('modalProductDesc');
+
+    function openBuyNowModal(productId) {
+        buyNowProductId.value = productId;
+        buyNowQuantity.value = 1;
+        // Hiển thị thông tin sản phẩm
+        if (productData[productId]) {
+            modalProductImg.src = productData[productId].img;
+            modalProductName.textContent = productData[productId].name;
+            modalProductDesc.textContent = productData[productId].desc;
+            // Lấy tồn kho từ đúng product-card
+            var btn = document.querySelector('.buy-now-btn[data-product-id="' + productId + '"]');
+            var card = btn ? btn.closest('.product-card[data-stock]') : null;
+            var stock = card ? parseInt(card.getAttribute('data-stock')) : 9999;
+            buyNowQuantity.max = stock;
+            buyNowQuantity.setAttribute('max', stock);
+            if (stock <= 0) {
+                buyNowQuantity.value = 0;
+                buyNowQuantity.disabled = true;
+            } else {
+                buyNowQuantity.disabled = false;
+            }
+        } else {
+            modalProductImg.src = '';
+            modalProductName.textContent = '';
+            modalProductDesc.textContent = '';
+            buyNowQuantity.max = 9999;
+            buyNowQuantity.disabled = false;
+        }
+        buyNowModal.classList.add('active');
+        buyNowQuantity.focus();
+    }
+    function closeBuyNow() {
+        buyNowModal.classList.remove('active');
+    }
+    buyNowBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var productId = btn.getAttribute('data-product-id');
+            openBuyNowModal(productId);
+        });
+    });
+    closeBuyNowModal.addEventListener('click', closeBuyNow);
+    closeBuyNowModalX.addEventListener('click', closeBuyNow);
+    buyNowModal.addEventListener('click', function(e) {
+        if (e.target === buyNowModal) closeBuyNow();
+    });
+    buyNowForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var productId = buyNowProductId.value;
+        var quantity = buyNowQuantity.value;
+        if (!quantity || quantity < 1) quantity = 1;
+        window.location.href = 'index.php?controller=Product&action=buy_now&id=' + encodeURIComponent(productId) + '&quantity=' + encodeURIComponent(quantity);
+    });
     </script>
 </body>
 </html>

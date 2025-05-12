@@ -293,6 +293,119 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
+
+    /* Modal nhập số lượng cho Mua ngay */
+    #buyNowModal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0; top: 0;
+        width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.35);
+        align-items: center; justify-content: center;
+        transition: background 0.2s;
+    }
+    #buyNowModal.active {
+        display: flex;
+        animation: fadeInModalBg 0.2s;
+    }
+    @keyframes fadeInModalBg {
+        from { background: rgba(0,0,0,0); }
+        to { background: rgba(0,0,0,0.35); }
+    }
+    #buyNowModal .modal-content {
+        background: #fff;
+        padding: 32px 28px 24px 28px;
+        border-radius: 16px;
+        min-width: 320px;
+        max-width: 95vw;
+        margin: auto;
+        position: relative;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        animation: modalPopIn 0.25s;
+    }
+    @keyframes modalPopIn {
+        from { transform: scale(0.85); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    #buyNowModal h3 {
+        margin-top: 0;
+        margin-bottom: 18px;
+        font-size: 1.25em;
+        font-weight: 600;
+        text-align: center;
+    }
+    #buyNowModal input[type=number] {
+        width: 90px;
+        font-size: 1.5em;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        text-align: center;
+        margin-bottom: 10px;
+        outline: none;
+        transition: border 0.2s;
+    }
+    #buyNowModal input[type=number]:focus {
+        border: 1.5px solid #007bff;
+    }
+    #buyNowModal .modal-actions {
+        margin-top: 18px;
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+    }
+    #buyNowModal .btn {
+        min-width: 90px;
+        font-size: 1em;
+        border-radius: 6px;
+        padding: 7px 0;
+    }
+    #closeBuyNowModal {
+        background: #eee;
+        color: #333;
+        border: none;
+    }
+    #closeBuyNowModal:hover {
+        background: #ddd;
+    }
+    #buyNowModal .close-x {
+        position: absolute;
+        top: 10px; right: 14px;
+        font-size: 1.3em;
+        color: #888;
+        cursor: pointer;
+        transition: color 0.2s;
+        font-weight: bold;
+    }
+    #buyNowModal .close-x:hover {
+        color: #e74c3c;
+    }
+    #buyNowModal .modal-product-img {
+        width: 90px;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    #buyNowModal .modal-product-name {
+        font-weight: 600;
+        font-size: 1.1em;
+        margin-bottom: 4px;
+        text-align: center;
+    }
+    #buyNowModal .modal-product-desc {
+        font-size: 0.98em;
+        color: #555;
+        margin-bottom: 12px;
+        text-align: center;
+        max-height: 60px;
+        overflow: auto;
+    }
   </style>
 </head>
 <body>
@@ -383,13 +496,9 @@
               <button type="submit" class="add-to-cart-btn" <?php if (!isset($product['stock']) || $product['stock'] <= 0) echo "disabled style='opacity: 0.6; cursor: not-allowed;'"; ?>>
                 <span class="cart-icon">🛒</span> Thêm vào giỏ hàng
               </button>
-              
-              <a href="index.php?controller=Product&action=buy_now&id=<?= $product['id'] ?>&quantity=1" 
-                 onclick="return updateBuyNowQuantity(this, <?= isset($product['stock']) ? $product['stock'] : 0 ?>)" 
-                 class="add-to-cart-btn" style="background-color: #e53e3e;" 
-                 <?php if (!isset($product['stock']) || $product['stock'] <= 0) echo "disabled style='opacity: 0.6; cursor: not-allowed; pointer-events: none;'"; ?>>
+              <button type="button" class="add-to-cart-btn buy-now-btn" style="background-color: #e53e3e;" data-product-id="<?= $product['id'] ?>" <?php if (!isset($product['stock']) || $product['stock'] <= 0) echo "disabled style='opacity: 0.6; cursor: not-allowed; pointer-events: none;'"; ?>>
                 <span class="cart-icon">⚡</span> Mua ngay
-              </a>
+              </button>
             </div>
           </form>
           
@@ -460,6 +569,25 @@
     </div>
   </div>
 
+  <!-- Modal nhập số lượng cho Mua ngay -->
+  <div id="buyNowModal">
+      <div class="modal-content">
+          <span class="close-x" id="closeBuyNowModalX">&times;</span>
+          <img id="modalProductImg" class="modal-product-img" src="" alt="Ảnh sản phẩm">
+          <div class="modal-product-name" id="modalProductName"></div>
+          <div class="modal-product-desc" id="modalProductDesc"></div>
+          <h3>Nhập số lượng muốn mua</h3>
+          <form id="buyNowForm" style="margin-bottom:0; text-align:center;">
+              <input type="number" id="buyNowQuantity" name="quantity" value="1" min="1">
+              <input type="hidden" id="buyNowProductId" name="id" value="">
+              <div class="modal-actions">
+                  <button type="submit" class="btn btn-sm btn-accent">Xác nhận</button>
+                  <button type="button" id="closeBuyNowModal" class="btn btn-sm">Hủy</button>
+              </div>
+          </form>
+      </div>
+  </div>
+
   <script>
     // Xử lý thông báo
     const alertElements = document.querySelectorAll('.alert');
@@ -507,6 +635,49 @@
       
       return true;
     }
+
+    var buyNowBtn = document.querySelector('.buy-now-btn');
+    var buyNowModal = document.getElementById('buyNowModal');
+    var buyNowForm = document.getElementById('buyNowForm');
+    var buyNowProductId = document.getElementById('buyNowProductId');
+    var buyNowQuantity = document.getElementById('buyNowQuantity');
+    var closeBuyNowModal = document.getElementById('closeBuyNowModal');
+    var closeBuyNowModalX = document.getElementById('closeBuyNowModalX');
+    var modalProductImg = document.getElementById('modalProductImg');
+    var modalProductName = document.getElementById('modalProductName');
+    var modalProductDesc = document.getElementById('modalProductDesc');
+
+    function openBuyNowModal(productId) {
+        buyNowProductId.value = productId;
+        buyNowQuantity.value = 1;
+        // Hiển thị thông tin sản phẩm
+        modalProductImg.src = "<?= isset($product['image']) ? 'http://localhost/WEB_MSB/public/assets/images/' . $product['image'] : 'http://localhost/WEB_MSB/public/assets/images/product1.jpg' ?>";
+        modalProductName.textContent = "<?= htmlspecialchars($product['name']) ?>";
+        modalProductDesc.textContent = "<?= htmlspecialchars($product['description']) ?>";
+        buyNowModal.classList.add('active');
+        buyNowQuantity.focus();
+    }
+    function closeBuyNow() {
+        buyNowModal.classList.remove('active');
+    }
+    if (buyNowBtn) {
+        buyNowBtn.addEventListener('click', function() {
+            var productId = buyNowBtn.getAttribute('data-product-id');
+            openBuyNowModal(productId);
+        });
+    }
+    closeBuyNowModal.addEventListener('click', closeBuyNow);
+    closeBuyNowModalX.addEventListener('click', closeBuyNow);
+    buyNowModal.addEventListener('click', function(e) {
+        if (e.target === buyNowModal) closeBuyNow();
+    });
+    buyNowForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var productId = buyNowProductId.value;
+        var quantity = buyNowQuantity.value;
+        if (!quantity || quantity < 1) quantity = 1;
+        window.location.href = 'index.php?controller=Product&action=buy_now&id=' + encodeURIComponent(productId) + '&quantity=' + encodeURIComponent(quantity);
+    });
   </script>
 </body>
 </html>
