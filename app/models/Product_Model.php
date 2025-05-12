@@ -207,7 +207,10 @@ class Product_Model extends BaseModel {
         
         if (!$conn) {
             error_log("Database connection error in insert_cart");
-            return false;
+            return [
+                'status' => false,
+                'message' => 'Lỗi kết nối cơ sở dữ liệu.'
+            ];
         }
         
         // Escape dữ liệu
@@ -233,10 +236,32 @@ class Product_Model extends BaseModel {
         $checkExist = "SELECT id, quantity FROM carts WHERE user_id = '$user_id' AND product_id = '$product_id'";
         $existResult = $conn->query($checkExist);
         
+        // Lấy số lượng tồn kho hiện tại của sản phẩm
+        $stockSql = "SELECT stock FROM products WHERE id = '$product_id' LIMIT 1";
+        $stockResult = $conn->query($stockSql);
+        if ($stockResult && $stockResult->num_rows > 0) {
+            $stockRow = $stockResult->fetch_assoc();
+            $stock = (int)$stockRow['stock'];
+        } else {
+            error_log("Không tìm thấy sản phẩm với ID: $product_id");
+            return [
+                'status' => false,
+                'message' => 'Không tìm thấy sản phẩm.'
+            ];
+        }
+        
         if ($existResult && $existResult->num_rows > 0) {
-            // Nếu sản phẩm đã tồn tại, cập nhật số lượng
             $existItem = $existResult->fetch_assoc();
-            $newQuantity = $existItem['quantity'] + $quantity;
+            $checkQuantity = $existItem['quantity'] + $quantity;
+            if($checkQuantity > $stock){
+                error_log("Số lượng sản phẩm vượt quá số lượng trong kho");
+                return [
+                    'status' => false,
+                    'message' => 'Số lượng sản phẩm vượt quá số lượng trong kho. Vui lòng chọn số lượng nhỏ hơn!'
+                ];
+            }else{
+                $newQuantity = $checkQuantity;
+            }
             $cartId = $existItem['id'];
             
             $updateSql = "UPDATE carts SET quantity = '$newQuantity' WHERE id = '$cartId'";
@@ -245,12 +270,25 @@ class Product_Model extends BaseModel {
             if (!$result) {
                 error_log("SQL Error in updating cart: " . $conn->error);
                 error_log("SQL Query: " . $updateSql);
-                return false;
+                return [
+                    'status' => false,
+                    'message' => 'Lỗi khi cập nhật giỏ hàng.'
+                ];
             }
             
-            return true;
+            return [
+                'status' => true,
+                'message' => 'Thêm sản phẩm vào giỏ hàng thành công!'
+            ];
         }
-        
+        // Nếu sản phẩm chưa có trong giỏ, kiểm tra số lượng yêu cầu
+        if ($quantity > $stock) {
+            error_log("Số lượng sản phẩm vượt quá số lượng trong kho");
+            return [
+                'status' => false,
+                'message' => 'Số lượng sản phẩm vượt quá số lượng trong kho. Vui lòng chọn số lượng nhỏ hơn!'
+            ];
+        }
         // Thêm mới sản phẩm vào giỏ hàng
         $insertSql = "INSERT INTO carts (user_id, product_id, product_name, quantity, price) 
                      VALUES ('$user_id', '$product_id', '$name_product', '$quantity', '$price')";
@@ -260,11 +298,17 @@ class Product_Model extends BaseModel {
         if (!$result) {
             error_log("SQL Error in insert_cart: " . $conn->error);
             error_log("SQL Query: " . $insertSql);
-            return false;
+            return [
+                'status' => false,
+                'message' => 'Lỗi khi thêm sản phẩm vào giỏ hàng.'
+            ];
         }
         
         error_log("Added product to cart: ID=$product_id, Name=$name_product, Price=$price");
-        return true;
+        return [
+            'status' => true,
+            'message' => 'Thêm sản phẩm vào giỏ hàng thành công!'
+        ];
     }
     
     // Tìm kiếm sản phẩm theo từ khóa

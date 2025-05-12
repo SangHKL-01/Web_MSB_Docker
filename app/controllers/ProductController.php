@@ -78,19 +78,18 @@ class ProductController extends BaseController {
                     $product['id']
                 );
                 
-                if ($result) {
+                if (is_array($result) && isset($result['status']) && $result['status'] === true) {
                     // Đặt thông báo thành công vào session
-                    $_SESSION['cart_message'] = "Đã thêm <strong>{$quantity}</strong> sản phẩm <strong>{$product['name']}</strong> vào giỏ hàng!";
-                    
+                    $_SESSION['cart_message'] = $result['message'];
                     // Lấy số lượng giỏ hàng mới và cập nhật sessionStorage
                     $cartCount = $this->getCartItemCount();
                     echo "<script>sessionStorage.setItem('cartCount', {$cartCount});</script>";
-                    
                     // Chuyển hướng trở lại trang trước đó
                     header("Location: $referer");
                     exit();
                 } else {
-                    $_SESSION['error'] = "Không thể thêm sản phẩm vào giỏ hàng";
+                    // Thông báo lỗi chi tiết từ model
+                    $_SESSION['error'] = is_array($result) && isset($result['message']) ? $result['message'] : "Không thể thêm sản phẩm vào giỏ hàng";
                     header("Location: $referer");
                     exit();
                 }

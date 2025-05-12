@@ -188,7 +188,14 @@
         // Xóa thông báo sau khi hiển thị
         unset($_SESSION['cart_message']);
     endif; ?>
-
+    <!-- Hiển thị thông báo lỗi -->
+    <?php if (isset($_SESSION['error'])): ?>
+    <div class="alert alert-danger" id="cart-alert-error">
+        <?= $_SESSION['error'] ?>
+    </div>
+    <?php 
+        unset($_SESSION['error']);
+    endif; ?>
 
     <!-- Hero Section -->
     <section class="hero">

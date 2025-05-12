@@ -179,14 +179,20 @@
         </div>
     </header>
 
-    <!-- Hiển thị thông báo khi thêm vào giỏ hàng thành công -->
+    <!-- Hiển thị thông báo khi thêm vào giỏ hàng thành công hoặc lỗi -->
     <?php if (isset($_SESSION['cart_message'])): ?>
     <div class="alert alert-success" id="cart-alert">
         <?= $_SESSION['cart_message'] ?>
     </div>
     <?php 
-        // Xóa thông báo sau khi hiển thị
         unset($_SESSION['cart_message']);
+    endif; ?>
+    <?php if (isset($_SESSION['error'])): ?>
+    <div class="alert alert-danger" id="cart-alert-error">
+        <?= $_SESSION['error'] ?>
+    </div>
+    <?php 
+        unset($_SESSION['error']);
     endif; ?>
 
     <!-- Hero Section - Mini banner for product page -->
@@ -249,11 +255,15 @@
                         <p class="product-price"><?= number_format($product['price'] ?? 0, 0, ',', '.') ?> VNĐ</p>
                         <div class="product-actions">
                             <a href="index.php?controller=Product&action=details_product&id=<?= $product['id'] ?>" class="btn btn-sm btn-primary">Xem Chi Tiết</a>
-                            <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>">
-                                <input type="hidden" name="quantity" value="1">
-                                <button type="submit" class="btn btn-sm btn-secondary">Thêm vào Giỏ</button>
-                            </form>
-                            <button type="button" class="btn btn-sm btn-accent buy-now-btn" data-product-id="<?= $product['id'] ?>">Mua ngay</button>
+                            <?php if ($product['stock'] > 0): ?>
+                                <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>" style="display:inline;">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn btn-sm btn-secondary">Thêm vào Giỏ</button>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-accent buy-now-btn" data-product-id="<?= $product['id'] ?>">Mua ngay</button>
+                            <?php else: ?>
+                                <span class="btn btn-sm" style="background-color: #ccc; cursor: not-allowed;">Hết hàng</span>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -279,22 +289,6 @@
             </ul>
         </div>
     </footer>
-
-    <!-- Script to update cart count dynamically -->
-    <script>
-        // Kiểm tra giỏ hàng trong session và cập nhật số lượng
-        if (sessionStorage.getItem("cartCount")) {
-            document.getElementById("cart-count").textContent = `(${sessionStorage.getItem("cartCount")})`;
-        }
-        
-        // Tự động ẩn thông báo sau 3 giây
-        const alertElement = document.getElementById('cart-alert');
-        if (alertElement) {
-            setTimeout(() => {
-                alertElement.style.display = 'none';
-            }, 3000);
-        }
-    </script>
 
     <!-- Modal nhập số lượng cho Mua ngay -->
     <div id="buyNowModal">

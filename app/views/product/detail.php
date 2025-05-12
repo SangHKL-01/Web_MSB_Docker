@@ -21,9 +21,9 @@
       animation: fadeIn 0.3s, fadeOut 0.5s 3s forwards;
     }
     .alert-success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
+      background-color: #d4edda !important;
+      color: #155724 !important;
+      border: 1px solid #c3e6cb !important;
     }
     .alert-error {
       background-color: #f8d7da;
@@ -451,7 +451,15 @@
     // Xóa thông báo sau khi hiển thị
     unset($_SESSION['cart_message']);
   endif; ?>
-  
+  <!-- Hiển thị thông báo lỗi -->
+  <?php if (isset($_SESSION['error'])): ?>
+    <div class="alert alert-danger" id="cart-alert-error">
+        <?= $_SESSION['error'] ?>
+    </div>
+    <?php 
+        unset($_SESSION['error']);
+    endif; ?>
+    
   <div class="container mx-auto px-4 py-8">
     <!-- Chi tiết sản phẩm -->
     <main class="max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-lg mb-8">
@@ -487,7 +495,7 @@
             
             <div class="quantity-control">
               <button type="button" class="quantity-btn" onclick="decreaseQuantity()">-</button>
-              <input type="number" name="quantity" id="quantity" value="1" min="1" class="quantity-input" 
+              <input type="number" name="quantity" id="quantity" value="1" min="1" max="<?= isset($product['stock']) ? $product['stock'] : 1 ?>" class="quantity-input" 
                 <?php if (!isset($product['stock']) || $product['stock'] <= 0) echo "disabled"; ?>>
               <button type="button" class="quantity-btn" onclick="increaseQuantity(<?= isset($product['stock']) ? $product['stock'] : 0 ?>)">+</button>
             </div>
@@ -613,27 +621,16 @@
         quantityInput.value = currentValue + 1;
       }
     }
-    
-    function updateBuyNowQuantity(link, maxStock) {
-      var quantityInput = document.getElementById('quantity');
-      var currentValue = parseInt(quantityInput.value);
-      
-      // Kiểm tra số lượng hợp lệ
-      if (currentValue < 1) {
-        alert('Số lượng phải lớn hơn 0');
-        return false;
-      }
-      
-      if (currentValue > maxStock) {
-        alert('Sản phẩm đã hết hàng');
-        return false;
-      }
-      
-      // Cập nhật URL với số lượng mới
-      var newHref = link.href.replace(/&quantity=\d+/, '&quantity=' + currentValue);
-      link.href = newHref;
-      
-      return true;
+
+    // Đảm bảo không cho nhập số lượng vượt quá tồn kho
+    var quantityInput = document.getElementById('quantity');
+    if (quantityInput) {
+      quantityInput.addEventListener('input', function() {
+        var maxStock = <?= isset($product['stock']) ? (int)$product['stock'] : 1 ?>;
+        var value = parseInt(this.value);
+        if (value > maxStock) this.value = maxStock;
+        if (value < 1 || isNaN(value)) this.value = 1;
+      });
     }
 
     var buyNowBtn = document.querySelector('.buy-now-btn');
@@ -687,8 +684,14 @@
     buyNowForm.addEventListener('submit', function(e) {
         e.preventDefault();
         var productId = buyNowProductId.value;
-        var quantity = buyNowQuantity.value;
+        var quantity = parseInt(buyNowQuantity.value);
+        var stock = <?= isset($product['stock']) ? (int)$product['stock'] : 9999 ?>;
         if (!quantity || quantity < 1) quantity = 1;
+        if (quantity > stock) {
+          alert('Số lượng vượt quá tồn kho!');
+          buyNowQuantity.value = stock;
+          return;
+        }
         window.location.href = 'index.php?controller=Product&action=buy_now&id=' + encodeURIComponent(productId) + '&quantity=' + encodeURIComponent(quantity);
     });
   </script>
