@@ -7,146 +7,7 @@ class Product_Model extends BaseModel {
     
     public function __construct() {
         parent::__construct("products", true);
-        // Ensure tables exist when model is instantiated
-        $this->initializeOrderTables();
-    }
-    
-    // Initialize all necessary order-related tables
-    private function initializeOrderTables() {
-        // Sử dụng kết nối từ Database class
-        $productDb = Database::getProductInstance();
-        $conn = $productDb->getConnection();
-        
-        // Kiểm tra kết nối
-        if (!$conn) {
-            error_log("Database connection error in initializeOrderTables");
-            return false;
-        }
-        
-        // Kiểm tra và tạo database nếu chưa tồn tại
-        try {
-            // Kết nối không có database để tạo database nếu cần
-            $tempConn = new mysqli("localhost", "root", "");
-            if ($tempConn->connect_error) {
-                error_log("Connection failed: " . $tempConn->connect_error);
-                return false;
-            }
-            
-            // Kiểm tra xem database có tồn tại không
-            $dbResult = $tempConn->query("SHOW DATABASES LIKE 'db_product'");
-            if ($dbResult->num_rows == 0) {
-                // Tạo database nếu không tồn tại
-                if (!$tempConn->query("CREATE DATABASE db_product")) {
-                    error_log("Error creating database: " . $tempConn->error);
-                    return false;
-                }
-                error_log("Database db_product created successfully");
-            }
-            
-            $tempConn->close();
-        } catch (Exception $e) {
-            error_log("Error checking/creating database: " . $e->getMessage());
-        }
-        
-        // Kiểm tra và tạo bảng orders nếu chưa tồn tại
-        $check_orders = $conn->query("SHOW TABLES LIKE 'orders'");
-        if ($check_orders && $check_orders->num_rows == 0) {
-            $create_orders = "CREATE TABLE orders (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NOT NULL,
-                total_amount DECIMAL(10, 2) NOT NULL,
-                status VARCHAR(50) DEFAULT 'đang xử lý',
-                payment_method VARCHAR(100),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            )";
-            
-            if (!$conn->query($create_orders)) {
-                error_log("Error creating orders table: " . $conn->error);
-                return false;
-            }
-            
-            error_log("Successfully created orders table");
-        } else {
-            // Bảng đã tồn tại, kiểm tra xem cột payment_method có tồn tại không
-            $check_payment_method = $conn->query("SHOW COLUMNS FROM orders LIKE 'payment_method'");
-            if ($check_payment_method && $check_payment_method->num_rows == 0) {
-                // Thêm cột payment_method nếu chưa tồn tại
-                $add_column = "ALTER TABLE orders ADD COLUMN payment_method VARCHAR(100) AFTER status";
-                if (!$conn->query($add_column)) {
-                    error_log("Error adding payment_method column: " . $conn->error);
-                }
-                error_log("Added payment_method column to orders table");
-            }
-            
-            // Kiểm tra xem cột order_date có tồn tại không
-            $check_order_date = $conn->query("SHOW COLUMNS FROM orders LIKE 'order_date'");
-            if ($check_order_date && $check_order_date->num_rows == 0) {
-                // Thêm cột order_date nếu chưa tồn tại và bảng có cột created_at
-                $check_created_at = $conn->query("SHOW COLUMNS FROM orders LIKE 'created_at'");
-                if ($check_created_at && $check_created_at->num_rows > 0) {
-                    // Thêm order_date và sao chép giá trị từ created_at
-                    $add_column = "ALTER TABLE orders ADD COLUMN order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP";
-                    if ($conn->query($add_column)) {
-                        $update_column = "UPDATE orders SET order_date = created_at";
-                        $conn->query($update_column);
-                        error_log("Added order_date column to orders table and copied values from created_at");
-                    } else {
-                        error_log("Error adding order_date column: " . $conn->error);
-                    }
-                } else {
-                    // Thêm order_date nếu không có cột created_at
-                    $add_column = "ALTER TABLE orders ADD COLUMN order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP";
-                    if (!$conn->query($add_column)) {
-                        error_log("Error adding order_date column: " . $conn->error);
-                    } else {
-                        error_log("Added order_date column to orders table");
-                    }
-                }
-            }
-            
-            // Kiểm tra các trường thông tin khách hàng
-            $required_customer_columns = [
-                'customer_name' => 'VARCHAR(255) NOT NULL DEFAULT "Khách hàng"',
-                'customer_phone' => 'VARCHAR(20) DEFAULT ""',
-                'customer_address' => 'TEXT',
-                'notes' => 'TEXT'
-            ];
-            
-            foreach ($required_customer_columns as $column => $definition) {
-                $check_column = $conn->query("SHOW COLUMNS FROM orders LIKE '$column'");
-                if ($check_column && $check_column->num_rows == 0) {
-                    $add_column = "ALTER TABLE orders ADD COLUMN $column $definition";
-                    if (!$conn->query($add_column)) {
-                        error_log("Error adding $column column: " . $conn->error);
-                    } else {
-                        error_log("Added $column column to orders table");
-                    }
-                }
-            }
-        }
-        
-        // Kiểm tra và tạo bảng order_details nếu chưa tồn tại
-        $check_details = $conn->query("SHOW TABLES LIKE 'order_details'");
-        if ($check_details && $check_details->num_rows == 0) {
-            $create_details = "CREATE TABLE order_details (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                order_id INT NOT NULL,
-                product_id INT,
-                product_name VARCHAR(255) NOT NULL,
-                quantity INT NOT NULL DEFAULT 1,
-                price DECIMAL(10, 2) NOT NULL
-            )";
-            
-            if (!$conn->query($create_details)) {
-                error_log("Error creating order_details table: " . $conn->error);
-                return false;
-            }
-            
-            error_log("Successfully created order_details table");
-        }
-        
-        return true;
+        // Đã có sẵn các bảng, không cần tự động tạo bảng nữa
     }
     
     public function Get_product($id) {
@@ -162,42 +23,37 @@ class Product_Model extends BaseModel {
             return [];
         }
         
-        $user_id = $conn->real_escape_string($user_id);
-        
         // Truy vấn lấy danh sách sản phẩm trong giỏ hàng
-        $sql = "SELECT * FROM carts WHERE user_id = '$user_id'";
-        $result = $conn->query($sql);
-        
+        $stmt = $conn->prepare("SELECT * FROM carts WHERE user_id = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
         if (!$result) {
             error_log("Error retrieving cart items: " . $conn->error);
             return [];
         }
-        
         $products = [];
         while ($row = $result->fetch_assoc()) {
             // Nếu không có giá trong giỏ hàng hoặc giá = 0, lấy giá từ bảng products
             if ((!isset($row['price']) || $row['price'] == 0) && isset($row['product_id'])) {
-                $product_id = $conn->real_escape_string($row['product_id']);
-                $productSql = "SELECT id, price, name FROM products WHERE id = '$product_id'";
-                $productResult = $conn->query($productSql);
-                
+                $product_id = $row['product_id'];
+                $productStmt = $conn->prepare("SELECT id, price, name FROM products WHERE id = ?");
+                $productStmt->bind_param("i", $product_id);
+                $productStmt->execute();
+                $productResult = $productStmt->get_result();
                 if ($productResult && $productResult->num_rows > 0) {
                     $productInfo = $productResult->fetch_assoc();
                     $row['price'] = $productInfo['price'];
-                    
-                    // Nếu name_product không tồn tại hoặc rỗng, sử dụng tên từ bảng products
                     if (empty($row['name_product'])) {
                         $row['name_product'] = $productInfo['name'];
                     }
-                    
-                    // Cập nhật giá trong giỏ hàng
-                    $updateSql = "UPDATE carts SET price = '{$productInfo['price']}' WHERE id = '{$row['id']}'";
-                    $conn->query($updateSql);
+                    $updateStmt = $conn->prepare("UPDATE carts SET price = ? WHERE id = ?");
+                    $updateStmt->bind_param("di", $productInfo['price'], $row['id']);
+                    $updateStmt->execute();
                 }
-            }           
+            }
             $products[] = $row;
         }
-        
         return $products;
     }
     // Thêm sản phẩm vào giỏ hàng
@@ -479,29 +335,6 @@ class Product_Model extends BaseModel {
             return false;
         }
         
-        // Kiểm tra bảng orders đã tồn tại chưa, nếu chưa thì tạo
-        $checkTableSQL = "SHOW TABLES LIKE 'orders'";
-        $tableExists = $conn->query($checkTableSQL);
-        
-        if (!$tableExists || $tableExists->num_rows == 0) {
-            $createTableSQL = "CREATE TABLE orders (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id VARCHAR(255) NOT NULL,
-                total_amount DECIMAL(10,2) DEFAULT 0,
-                customer_name VARCHAR(255) NOT NULL,
-                customer_phone VARCHAR(20) NOT NULL,
-                customer_address TEXT NOT NULL,
-                payment_method VARCHAR(50) DEFAULT 'COD',
-                notes TEXT,
-                order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )";
-            
-            if (!$conn->query($createTableSQL)) {
-                error_log("Error creating orders table: " . $conn->error);
-                return false;
-            }
-        }
-        
         // Escape dữ liệu
         $user_id = $conn->real_escape_string($data['user_id']);
         $total_amount = isset($data['total_amount']) ? $conn->real_escape_string($data['total_amount']) : '0';
@@ -511,32 +344,9 @@ class Product_Model extends BaseModel {
         $payment_method = isset($data['payment_method']) ? $conn->real_escape_string($data['payment_method']) : 'COD';
         $notes = isset($data['notes']) ? $conn->real_escape_string($data['notes']) : '';
         
-        // Kiểm tra cột payment_method đã tồn tại chưa
-        $checkPaymentColumn = "SHOW COLUMNS FROM orders LIKE 'payment_method'";
-        $paymentColumnExists = $conn->query($checkPaymentColumn);
-        
-        // Kiểm tra cột total_amount đã tồn tại chưa
-        $checkTotalColumn = "SHOW COLUMNS FROM orders LIKE 'total_amount'";
-        $totalColumnExists = $conn->query($checkTotalColumn);
-        
-        if ($paymentColumnExists && $paymentColumnExists->num_rows > 0 && 
-            $totalColumnExists && $totalColumnExists->num_rows > 0) {
-            // Có cả hai cột
-            $sql = "INSERT INTO orders (user_id, total_amount, customer_name, customer_phone, customer_address, payment_method, notes) 
-                    VALUES ('$user_id', '$total_amount', '$customer_name', '$customer_phone', '$customer_address', '$payment_method', '$notes')";
-        } elseif ($totalColumnExists && $totalColumnExists->num_rows > 0) {
-            // Chỉ có cột total_amount
-            $sql = "INSERT INTO orders (user_id, total_amount, customer_name, customer_phone, customer_address, notes) 
-                    VALUES ('$user_id', '$total_amount', '$customer_name', '$customer_phone', '$customer_address', '$notes')";
-        } elseif ($paymentColumnExists && $paymentColumnExists->num_rows > 0) {
-            // Chỉ có cột payment_method
-            $sql = "INSERT INTO orders (user_id, customer_name, customer_phone, customer_address, payment_method, notes) 
-                    VALUES ('$user_id', '$customer_name', '$customer_phone', '$customer_address', '$payment_method', '$notes')";
-        } else {
-            // Không có cả hai cột
-            $sql = "INSERT INTO orders (user_id, customer_name, customer_phone, customer_address, notes) 
-                    VALUES ('$user_id', '$customer_name', '$customer_phone', '$customer_address', '$notes')";
-        }
+        // Chỉ thực hiện insert, không kiểm tra bảng/cột nữa
+        $sql = "INSERT INTO orders (user_id, total_amount, customer_name, customer_phone, customer_address, payment_method, notes) 
+                VALUES ('$user_id', '$total_amount', '$customer_name', '$customer_phone', '$customer_address', '$payment_method', '$notes')";
         
         if ($conn->query($sql)) {
             $order_id = $conn->insert_id;
@@ -557,28 +367,7 @@ class Product_Model extends BaseModel {
             error_log("Database connection error in createOrderDetail");
             return false;
         }
-        
-        // Kiểm tra bảng order_details đã tồn tại chưa, nếu chưa thì tạo
-        $checkTableSQL = "SHOW TABLES LIKE 'order_details'";
-        $tableExists = $conn->query($checkTableSQL);
-        
-        if (!$tableExists || $tableExists->num_rows == 0) {
-            $createTableSQL = "CREATE TABLE order_details (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                order_id INT NOT NULL,
-                product_id INT DEFAULT NULL,
-                product_name VARCHAR(255) NOT NULL,
-                quantity INT NOT NULL,
-                price DECIMAL(10,2) DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )";
-            
-            if (!$conn->query($createTableSQL)) {
-                error_log("Error creating order_details table: " . $conn->error);
-                return false;
-            }
-        }
-        
+    
         // Escape dữ liệu
         $order_id = $conn->real_escape_string($data['order_id']);
         $product_name = $conn->real_escape_string($data['product_name']);
@@ -619,38 +408,9 @@ class Product_Model extends BaseModel {
             }
         }
         
-        // Kiểm tra cột price đã tồn tại chưa
-        $checkPriceColumn = "SHOW COLUMNS FROM order_details LIKE 'price'";
-        $priceColumnExists = $conn->query($checkPriceColumn);
-        
-        // Kiểm tra cột product_id đã tồn tại chưa
-        $checkProductIdColumn = "SHOW COLUMNS FROM order_details LIKE 'product_id'";
-        $productIdColumnExists = $conn->query($checkProductIdColumn);
-        
-        // Tạo SQL dựa trên cấu trúc bảng
-        if ($productIdColumnExists && $productIdColumnExists->num_rows > 0) {
-            // Bảng có cột product_id
-            if ($priceColumnExists && $priceColumnExists->num_rows > 0) {
-                // Bảng có cả cột price và product_id
-                $sql = "INSERT INTO order_details (order_id, product_id, product_name, quantity, price) 
-                        VALUES ('$order_id', $product_id, '$product_name', '$quantity', '$price')";
-            } else {
-                // Bảng chỉ có cột product_id
-                $sql = "INSERT INTO order_details (order_id, product_id, product_name, quantity) 
-                        VALUES ('$order_id', $product_id, '$product_name', '$quantity')";
-            }
-        } else {
-            // Bảng không có cột product_id
-            if ($priceColumnExists && $priceColumnExists->num_rows > 0) {
-                // Bảng chỉ có cột price
-                $sql = "INSERT INTO order_details (order_id, product_name, quantity, price) 
-                        VALUES ('$order_id', '$product_name', '$quantity', '$price')";
-            } else {
-                // Bảng không có cả hai cột
-                $sql = "INSERT INTO order_details (order_id, product_name, quantity) 
-                        VALUES ('$order_id', '$product_name', '$quantity')";
-            }
-        }
+        // Chỉ thực hiện insert, không kiểm tra cột nữa
+        $sql = "INSERT INTO order_details (order_id, product_id, product_name, quantity, price) 
+                VALUES ('$order_id', $product_id, '$product_name', '$quantity', '$price')";
         
         if ($conn->query($sql)) {
             $insert_id = $conn->insert_id;
@@ -809,5 +569,29 @@ class Product_Model extends BaseModel {
             return $updateResult;
         }
         return false;
+    }
+
+    // Cập nhật đơn hàng (ví dụ: trạng thái)
+    public function updateOrder($order_id, $data) {
+        $productDb = Database::getProductInstance();
+        $conn = $productDb->getConnection();
+        if (!$conn) {
+            error_log("Database connection error in updateOrder");
+            return false;
+        }
+        $order_id = $conn->real_escape_string($order_id);
+        $set = [];
+        foreach ($data as $key => $value) {
+            $set[] = "$key='" . $conn->real_escape_string($value) . "'";
+        }
+        if (empty($set)) return false;
+        $setStr = implode(", ", $set);
+        $sql = "UPDATE orders SET $setStr WHERE id='$order_id'";
+        $result = $conn->query($sql);
+        if (!$result) {
+            error_log("Error updating order: " . $conn->error);
+            error_log("SQL Query: " . $sql);
+        }
+        return $result;
     }
 }

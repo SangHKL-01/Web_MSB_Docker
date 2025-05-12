@@ -26,9 +26,6 @@
             Submit
         </button>
     </div>
-    <div class="forgot-password">
-        <a href="/forgot-password">Forgot your password?</a>
-    </div>
     <div class="register">
         <a href="index.php?controller=user&action=register">Create user</a>
     </div>

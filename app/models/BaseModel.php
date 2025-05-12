@@ -30,63 +30,60 @@ class BaseModel {
         return $data;
     }
     
-    // Lấy một bản ghi theo id
+    // Lấy một bản ghi theo id (prepared statement)
     public function getById($id) {
-        // Lỗ hổng SQL Injection: truyền trực tiếp biến vào câu truy vấn
-        $sql = "SELECT * FROM $this->table WHERE id = $id";
-        $result = $this->db->query($sql);
-        
+        $stmt = $this->db->getConnection()->prepare("SELECT * FROM $this->table WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
         if ($result && $result->num_rows > 0) {
             return $result->fetch_assoc();
         }
-        
         return null;
     }
     
-    // Lấy bản ghi theo điều kiện
+    // Lấy bản ghi theo điều kiện (prepared statement)
     public function getByField($field, $value) {
-        // Lỗ hổng SQL Injection: truyền trực tiếp biến vào câu truy vấn
-        $sql = "SELECT * FROM $this->table WHERE $field = '$value'";
-        $result = $this->db->query($sql);
-        
+        $stmt = $this->db->getConnection()->prepare("SELECT * FROM $this->table WHERE $field = ?");
+        $stmt->bind_param("s", $value);
+        $stmt->execute();
+        $result = $stmt->get_result();
         if ($result && $result->num_rows > 0) {
             return $result->fetch_assoc();
         }
-        
         return null;
     }
     
-    // Thêm bản ghi mới
+    // Thêm bản ghi mới (prepared statement)
     public function insert($data) {
         $columns = implode(", ", array_keys($data));
-        $values = implode("', '", array_values($data));
-        
-        // Lỗ hổng SQL Injection: không escape dữ liệu đầu vào
-        $sql = "INSERT INTO $this->table ($columns) VALUES ('$values')";
-        
-        return $this->db->query($sql);
+        $placeholders = rtrim(str_repeat('?, ', count($data)), ', ');
+        $types = str_repeat('s', count($data));
+        $stmt = $this->db->getConnection()->prepare("INSERT INTO $this->table ($columns) VALUES ($placeholders)");
+        $stmt->bind_param($types, ...array_values($data));
+        return $stmt->execute();
     }
     
-    // Cập nhật bản ghi
+    // Cập nhật bản ghi (prepared statement)
     public function update($id, $data) {
         $setClause = [];
         foreach ($data as $key => $value) {
-            $setClause[] = "$key = '$value'";
+            $setClause[] = "$key = ?";
         }
         $setString = implode(", ", $setClause);
-        
-        // Lỗ hổng SQL Injection: không escape dữ liệu đầu vào
-        $sql = "UPDATE $this->table SET $setString WHERE id = $id";
-        
-        return $this->db->query($sql);
+        $types = str_repeat('s', count($data)) . 'i';
+        $values = array_values($data);
+        $values[] = $id;
+        $stmt = $this->db->getConnection()->prepare("UPDATE $this->table SET $setString WHERE id = ?");
+        $stmt->bind_param($types, ...$values);
+        return $stmt->execute();
     }
     
-    // Xóa bản ghi
+    // Xóa bản ghi (prepared statement)
     public function delete($id) {
-        // Lỗ hổng SQL Injection: truyền trực tiếp biến vào câu truy vấn
-        $sql = "DELETE FROM $this->table WHERE id = $id";
-        
-        return $this->db->query($sql);
+        $stmt = $this->db->getConnection()->prepare("DELETE FROM $this->table WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        return $stmt->execute();
     }
 }
 ?> 

@@ -7,51 +7,45 @@ class AdminModel extends BaseModel {
         parent::__construct("users");
     }
     
-    // Kiểm tra username đã tồn tại chưa
+    // Kiểm tra username đã tồn tại chưa (prepared statement)
     public function isUsernameExists($username) {
-        // Sử dụng truy vấn trực tiếp, đảm bảo tên username được làm sạch
-        $username = addslashes($username);
-        $sql = "SELECT id FROM {$this->table} WHERE username = '$username'";
-        $result = $this->db->query($sql);
-        
+        $stmt = $this->db->getConnection()->prepare("SELECT id FROM {$this->table} WHERE username = ?");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
         return $result && $result->num_rows > 0;
     }
     
-    // Kiểm tra email đã tồn tại chưa
+    // Kiểm tra email đã tồn tại chưa (prepared statement)
     public function isEmailExists($email) {
-        // Sử dụng truy vấn trực tiếp, đảm bảo email được làm sạch
-        $email = addslashes($email);
-        $sql = "SELECT id FROM {$this->table} WHERE email = '$email'";
-        $result = $this->db->query($sql);
-        
+        $stmt = $this->db->getConnection()->prepare("SELECT id FROM {$this->table} WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
         return $result && $result->num_rows > 0;
     }
     
-    // Tìm người dùng theo username
+    // Tìm người dùng theo username (prepared statement)
     public function findByUsername($username) {
-        // Sử dụng truy vấn trực tiếp, đảm bảo username được làm sạch
-        $username = addslashes($username);
-        $sql = "SELECT * FROM {$this->table} WHERE username = '$username'";
-        $result = $this->db->query($sql);
-        
+        $stmt = $this->db->getConnection()->prepare("SELECT * FROM {$this->table} WHERE username = ?");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
         if ($result && $result->num_rows > 0) {
             return $result->fetch_assoc();
         }
-        
         return null;
     }
     
-    // Tìm người dùng theo email
+    // Tìm người dùng theo email (prepared statement)
     public function findByEmail($email) {
-        // Sử dụng truy vấn trực tiếp, đảm bảo email được làm sạch
-        $email = addslashes($email);
-        $sql = "SELECT * FROM {$this->table} WHERE email = '$email'";
-        $result = $this->db->query($sql);
-        
+        $stmt = $this->db->getConnection()->prepare("SELECT * FROM {$this->table} WHERE email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
         if ($result && $result->num_rows > 0) {
             return $result->fetch_assoc();
         }
-        
         return null;
     }
     

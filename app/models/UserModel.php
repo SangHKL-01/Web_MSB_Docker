@@ -7,16 +7,15 @@ class UserModel extends BaseModel {
         parent::__construct("users", false); // Sử dụng db_user database
     }
 
-    // Lỗ hổng: SQL Injection thông qua truy vấn trực tiếp
+    // Sử dụng prepared statement để chống SQL Injection
     public function authenticate($username, $password) {
-        // Không escape các tham số đầu vào
-        $sql = "SELECT * FROM $this->table WHERE username = '$username' AND password = '$password'";
-        $result = $this->db->query($sql);
-        
+        $stmt = $this->db->getConnection()->prepare("SELECT * FROM $this->table WHERE username = ? AND password = ?");
+        $stmt->bind_param("ss", $username, $password);
+        $stmt->execute();
+        $result = $stmt->get_result();
         if ($result && $result->num_rows > 0) {
             return $result->fetch_assoc();
         }
-        
         return null;
     }
     
@@ -33,9 +32,16 @@ class UserModel extends BaseModel {
         return $this->insert($data);
     }
     
-    // Lỗ hổng: SQL Injection
+    // Sử dụng prepared statement để chống SQL Injection
     public function Get_user($username) {
-        return $this->getByField('username', $username);
+        $stmt = $this->db->getConnection()->prepare("SELECT * FROM $this->table WHERE username = ?");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result && $result->num_rows > 0) {
+            return $result->fetch_assoc();
+        }
+        return null;
     }
     
     // Lỗ hổng: Không xác thực đầu vào
@@ -53,9 +59,8 @@ class UserModel extends BaseModel {
         return false;
     }
     
-    // Lỗ hổng: SQL Injection và XSS thông qua đầu vào người dùng
+
     public function change_profile($fullname, $ngay_sinh, $gioi_tinh, $phone, $username) {
-        // Không lọc đầu vào có thể dẫn đến XSS
         $data = [
             'fullname' => $fullname,
             'ngay_sinh' => $ngay_sinh,
@@ -84,17 +89,16 @@ class UserModel extends BaseModel {
         return file_get_contents($file_path);
     }
     
-    // Lấy thông tin sản phẩm - sử dụng product database
+    // Sử dụng prepared statement để chống SQL Injection
     public function Get_product($name) {
-        // Dùng product database để lấy thông tin sản phẩm
         $productDb = Database::getProductInstance();
-        $sql = "SELECT * FROM products WHERE name = '$name'";
-        $result = $productDb->query($sql);
-        
+        $stmt = $productDb->getConnection()->prepare("SELECT * FROM products WHERE name = ?");
+        $stmt->bind_param("s", $name);
+        $stmt->execute();
+        $result = $stmt->get_result();
         if ($result && $result->num_rows > 0) {
             return $result->fetch_assoc();
         }
-        
         return null;
     }
     
