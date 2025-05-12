@@ -649,11 +649,24 @@
 
     function openBuyNowModal(productId) {
         buyNowProductId.value = productId;
-        buyNowQuantity.value = 1;
+        // Lấy số lượng đã chọn ở input ngoài
+        var outsideQuantity = document.getElementById('quantity');
+        var selectedQuantity = outsideQuantity ? parseInt(outsideQuantity.value) || 1 : 1;
+        buyNowQuantity.value = selectedQuantity;
         // Hiển thị thông tin sản phẩm
         modalProductImg.src = "<?= isset($product['image']) ? 'http://localhost/WEB_MSB/public/assets/images/' . $product['image'] : 'http://localhost/WEB_MSB/public/assets/images/product1.jpg' ?>";
         modalProductName.textContent = "<?= htmlspecialchars($product['name']) ?>";
         modalProductDesc.textContent = "<?= htmlspecialchars($product['description']) ?>";
+        // Giới hạn max theo tồn kho
+        var stock = <?= isset($product['stock']) ? (int)$product['stock'] : 9999 ?>;
+        buyNowQuantity.max = stock;
+        buyNowQuantity.setAttribute('max', stock);
+        if (stock <= 0) {
+            buyNowQuantity.value = 0;
+            buyNowQuantity.disabled = true;
+        } else {
+            buyNowQuantity.disabled = false;
+        }
         buyNowModal.classList.add('active');
         buyNowQuantity.focus();
     }
