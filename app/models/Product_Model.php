@@ -149,7 +149,6 @@ class Product_Model extends BaseModel {
         return true;
     }
     
-    // Lấy sản phẩm theo ID
     public function Get_product($id) {
         return $this->getById($id);
     }
@@ -280,7 +279,6 @@ class Product_Model extends BaseModel {
             return [];
         }
         
-        // Escape từ khóa để tránh SQL Injection
         
         // Tìm kiếm trong tên và mô tả sản phẩm
         $sql = "SELECT * FROM products WHERE name LIKE '%$keyword%' OR description LIKE '%$keyword%'";
@@ -743,99 +741,29 @@ class Product_Model extends BaseModel {
         }
     }
     public function updateProductQuantity($product_id, $quantity) {
-        try {
-            // Sử dụng kết nối từ Database class
-            $productDb = Database::getProductInstance();
-            $conn = $productDb->getConnection();
-            
-            if (!$conn) {
-                error_log("Database connection error in updateProductQuantity");
-                return false;
-            }
-            
-            // Bắt đầu transaction
-            $conn->begin_transaction();
-            
-            // Escape dữ liệu
-            $product_id = $conn->real_escape_string($product_id);
-            $quantity = (int)$quantity; // Đảm bảo số lượng là số nguyên
-            
-            // Lấy số lượng hiện tại của sản phẩm (từ cột stock) với khóa FOR UPDATE
-            $query = "SELECT stock FROM products WHERE id = '$product_id' LIMIT 1 FOR UPDATE";
-            $result = $conn->query($query);
-            
-            if ($result && $result->num_rows > 0) {
-                $product = $result->fetch_assoc();
-                
-                // Tính toán số lượng mới (số lượng hiện tại - số lượng đã mua)
-                $new_quantity = max(0, $product['stock'] - $quantity);
-                
-                // Cập nhật số lượng mới vào cơ sở dữ liệu (cột stock)
-                $updateSql = "UPDATE products SET stock = '$new_quantity' WHERE id = '$product_id'";
-                $updateResult = $conn->query($updateSql);
-                
-                if (!$updateResult) {
-                    // Rollback nếu có lỗi
-                    $conn->rollback();
-                    error_log("SQL Error in updateProductQuantity: " . $conn->error);
-                    error_log("SQL Query: " . $updateSql);
-                    return false;
-                }
-                
-                // Commit transaction
-                $conn->commit();
-                return true;
-            } else {
-                // Rollback nếu không tìm thấy sản phẩm
-                $conn->rollback();
-                error_log("Product not found in updateProductQuantity: " . $product_id);
-                return false;
-            }
-        } catch (Exception $e) {
-            // Rollback nếu có exception
-            if (isset($conn)) {
-                $conn->rollback();
-            }
-            error_log("Exception in updateProductQuantity: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    // Cập nhật thông tin đơn hàng
-    public function updateOrder($order_id, $data) {
         $productDb = Database::getProductInstance();
         $conn = $productDb->getConnection();
-        
+
         if (!$conn) {
-            error_log("Database connection error in updateOrder");
+            error_log("Database connection error in updateProductQuantity");
             return false;
         }
-        
-        // Escape dữ liệu
-        $order_id = $conn->real_escape_string($order_id);
-        
-        // Xây dựng câu lệnh SQL động dựa trên dữ liệu cần cập nhật
-        $updateFields = [];
-        foreach ($data as $key => $value) {
-            $key = $conn->real_escape_string($key);
-            $value = $conn->real_escape_string($value);
-            $updateFields[] = "`$key` = '$value'";
+
+        // Lấy số lượng hiện tại của sản phẩm
+        $product_id = $conn->real_escape_string($product_id);
+        $sql = "SELECT stock FROM products WHERE id = '$product_id' LIMIT 1";
+        $result = $conn->query($sql);
+
+        if ($result && $result->num_rows > 0) {
+            $product = $result->fetch_assoc();
+            $new_quantity = max(0, $product['stock'] - $quantity);
+
+            // Cập nhật số lượng mới vào cơ sở dữ liệu
+            $updateSql = "UPDATE products SET stock = '$new_quantity' WHERE id = '$product_id'";
+            $updateResult = $conn->query($updateSql);
+
+            return $updateResult;
         }
-        
-        if (empty($updateFields)) {
-            error_log("No fields to update for order ID: $order_id");
-            return false;
-        }
-        
-        $sql = "UPDATE orders SET " . implode(", ", $updateFields) . " WHERE id = '$order_id'";
-        
-        if ($conn->query($sql)) {
-            error_log("Successfully updated order ID: $order_id");
-            return true;
-        } else {
-            error_log("Error updating order: " . $conn->error);
-            error_log("SQL Query: " . $sql);
-            return false;
-        }
+        return false;
     }
 }
