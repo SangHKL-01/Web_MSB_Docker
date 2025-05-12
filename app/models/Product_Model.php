@@ -1,8 +1,6 @@
 <?php
 require_once 'app/models/BaseModel.php';
 
-include 'db/db_products.php';
-
 class Product_Model extends BaseModel {
     
     public function __construct() {
@@ -167,36 +165,27 @@ class Product_Model extends BaseModel {
         ];
     }
     
-    // Tìm kiếm sản phẩm theo từ khóa
+    // Tìm kiếm sản phẩm theo từ khóa (prepared statement)
     public function searchProducts($keyword) {
-        // Sử dụng kết nối từ Database class
         $productDb = Database::getProductInstance();
         $conn = $productDb->getConnection();
-        
-        // Kiểm tra kết nối
         if (!$conn) {
             error_log("Database connection error in searchProducts");
             return [];
         }
-        
-        
-        // Tìm kiếm trong tên và mô tả sản phẩm
-        $sql = "SELECT * FROM products WHERE name LIKE '%$keyword%' OR description LIKE '%$keyword%'";
-        $result = $conn->query($sql);
-        
+        $like = "%$keyword%";
+        $stmt = $conn->prepare("SELECT * FROM products WHERE name LIKE ? OR description LIKE ?");
+        $stmt->bind_param("ss", $like, $like);
+        $stmt->execute();
+        $result = $stmt->get_result();
         if (!$result) {
             error_log("SQL Error in searchProducts: " . $conn->error);
-            error_log("SQL Query: " . $sql);
             return [];
         }
-        
         $products = [];
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $products[] = $row;
-            }
+        while ($row = $result->fetch_assoc()) {
+            $products[] = $row;
         }
-        
         return $products;
     }
     
@@ -313,16 +302,13 @@ class Product_Model extends BaseModel {
         return $products;
     }
 
-    // Xóa sản phẩm khỏi giỏ hàng
+    // Xóa sản phẩm khỏi giỏ hàng (prepared statement)
     public function remove_from_cart($cart_id, $user_id) {
-        // Sử dụng database product
         $productDb = Database::getProductInstance();
-        
-        // Xóa sản phẩm từ giỏ hàng, đảm bảo chỉ xóa sản phẩm của người dùng hiện tại
-        $sql = "DELETE FROM carts WHERE id = '$cart_id' AND user_id = '$user_id'";
-        $result = $productDb->query($sql);
-        
-        return $result;
+        $conn = $productDb->getConnection();
+        $stmt = $conn->prepare("DELETE FROM carts WHERE id = ? AND user_id = ?");
+        $stmt->bind_param("ii", $cart_id, $user_id);
+        return $stmt->execute();
     }
 
     // Tạo đơn hàng mới
@@ -423,56 +409,41 @@ class Product_Model extends BaseModel {
         }
     }
     
-    // Xóa giỏ hàng sau khi đặt hàng
+    // Xóa giỏ hàng sau khi đặt hàng (prepared statement)
     public function clearCart($user_id) {
-        // Sử dụng kết nối từ Database class
         $productDb = Database::getProductInstance();
         $conn = $productDb->getConnection();
-        
-        // Kiểm tra kết nối
         if (!$conn) {
             error_log("Database connection error in clearCart");
             return false;
         }
-        
-        // Escape dữ liệu
-        $user_id = $conn->real_escape_string($user_id);
-        
-        $sql = "DELETE FROM carts WHERE user_id = '$user_id'";
-        $result = $conn->query($sql);
-        
+        $stmt = $conn->prepare("DELETE FROM carts WHERE user_id = ?");
+        $stmt->bind_param("i", $user_id);
+        $result = $stmt->execute();
         if (!$result) {
             error_log("SQL Error in clearCart: " . $conn->error);
-            error_log("SQL Query: " . $sql);
         }
-        
         return $result;
     }
 
-    // Lấy danh sách đơn hàng của người dùng
+    // Lấy danh sách đơn hàng của người dùng (prepared statement)
     public function getOrdersByUser($user_id) {
         $productDb = Database::getProductInstance();
         $conn = $productDb->getConnection();
-        
         if (!$conn) {
             error_log("Database connection error in getOrdersByUser");
             return [];
         }
-        
-        // Truy vấn đơn giản
-        $sql = "SELECT * FROM orders WHERE user_id = $user_id ORDER BY created_at DESC";
-        
-        $result = $conn->query($sql);
-        
+        $stmt = $conn->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
         if (!$result) {
             error_log("Error retrieving orders: " . $conn->error);
-            error_log("SQL Query: " . $sql);
             return [];
         }
-        
         $orders = [];
         while ($row = $result->fetch_assoc()) {
-            // Đảm bảo các trường thông tin khách hàng luôn có trong kết quả
             if (!isset($row['customer_name'])) {
                 $row['customer_name'] = 'Khách hàng';
             }
@@ -488,54 +459,45 @@ class Product_Model extends BaseModel {
             if (!isset($row['notes'])) {
                 $row['notes'] = '';
             }
-            
             $orders[] = $row;
         }
-        
         return $orders;
     }
     
-    // Lấy chi tiết đơn hàng
+    // Lấy chi tiết đơn hàng (prepared statement)
     public function getOrderDetails($order_id) {
         $productDb = Database::getProductInstance();
         $conn = $productDb->getConnection();
-        
         if (!$conn) {
             error_log("Database connection error in getOrderDetails");
             return [];
         }
-        
-        $order_id = $conn->real_escape_string($order_id);
-        $sql = "SELECT * FROM order_details WHERE order_id = '$order_id'";
-        $result = $conn->query($sql);
-        
+        $stmt = $conn->prepare("SELECT * FROM order_details WHERE order_id = ?");
+        $stmt->bind_param("i", $order_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
         if ($result) {
             $items = [];
             while ($row = $result->fetch_assoc()) {
-                // Kiểm tra nếu giá = 0 và có product_id, lấy giá từ bảng products
                 if (($row['price'] == 0 || empty($row['price'])) && isset($row['product_id']) && !empty($row['product_id'])) {
-                    $productId = $conn->real_escape_string($row['product_id']);
-                    $productSql = "SELECT price FROM products WHERE id = '$productId'";
-                    $productResult = $conn->query($productSql);
-                    
+                    $productId = $row['product_id'];
+                    $productStmt = $conn->prepare("SELECT price FROM products WHERE id = ?");
+                    $productStmt->bind_param("i", $productId);
+                    $productStmt->execute();
+                    $productResult = $productStmt->get_result();
                     if ($productResult && $productResult->num_rows > 0) {
                         $productInfo = $productResult->fetch_assoc();
                         $row['price'] = $productInfo['price'];
-                        
-                        // Cập nhật giá trong bảng order_details để lần sau không cần truy vấn lại
-                        $updateSql = "UPDATE order_details SET price = '{$productInfo['price']}' WHERE id = '{$row['id']}'";
-                        $conn->query($updateSql);
-                        
+                        $updateStmt = $conn->prepare("UPDATE order_details SET price = ? WHERE id = ?");
+                        $updateStmt->bind_param("di", $productInfo['price'], $row['id']);
+                        $updateStmt->execute();
                         error_log("Updated price for order detail ID {$row['id']} to {$productInfo['price']}");
                     }
                 }
-                
-                // Nếu vẫn không có giá, đặt giá mặc định
                 if ($row['price'] == 0 || empty($row['price'])) {
                     error_log("Warning: Order detail ID {$row['id']} has zero price for product: {$row['product_name']}");
-                    $row['price'] = 10000; // Đặt giá mặc định 10,000 VND
+                    $row['price'] = 10000;
                 }
-                
                 $items[] = $row;
             }
             return $items;
@@ -544,28 +506,24 @@ class Product_Model extends BaseModel {
             return [];
         }
     }
+    // Cập nhật số lượng sản phẩm (prepared statement)
     public function updateProductQuantity($product_id, $quantity) {
         $productDb = Database::getProductInstance();
         $conn = $productDb->getConnection();
-
         if (!$conn) {
             error_log("Database connection error in updateProductQuantity");
             return false;
         }
-
-        // Lấy số lượng hiện tại của sản phẩm
-        $product_id = $conn->real_escape_string($product_id);
-        $sql = "SELECT stock FROM products WHERE id = '$product_id' LIMIT 1";
-        $result = $conn->query($sql);
-
+        $stmt = $conn->prepare("SELECT stock FROM products WHERE id = ? LIMIT 1");
+        $stmt->bind_param("i", $product_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
         if ($result && $result->num_rows > 0) {
             $product = $result->fetch_assoc();
             $new_quantity = max(0, $product['stock'] - $quantity);
-
-            // Cập nhật số lượng mới vào cơ sở dữ liệu
-            $updateSql = "UPDATE products SET stock = '$new_quantity' WHERE id = '$product_id'";
-            $updateResult = $conn->query($updateSql);
-
+            $updateStmt = $conn->prepare("UPDATE products SET stock = ? WHERE id = ?");
+            $updateStmt->bind_param("ii", $new_quantity, $product_id);
+            $updateResult = $updateStmt->execute();
             return $updateResult;
         }
         return false;

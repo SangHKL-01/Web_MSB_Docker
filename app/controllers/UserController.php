@@ -15,15 +15,12 @@ class UserController extends BaseController {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $postData = $this->getPostData();
             
-            // Lỗ hổng: không lọc đầu vào
             $username = $postData['username'];
             $password = $postData['password'];
 
-            // Lỗ hổng: mật khẩu được lưu dưới dạng plaintext
             $user = $this->userModel->authenticate($username, $password);
 
             if ($user) {
-                // Lỗ hổng: lưu toàn bộ thông tin người dùng vào session (bao gồm mật khẩu)
                 $this->setSession('user', $user);
                 
                 if (isset($postData['remember_me'])) {
@@ -69,7 +66,6 @@ class UserController extends BaseController {
                 $this->view('user/register', ['error' => $error]);
             }
             else {
-
                 $result = $this->userModel->register($username, $password, $email);
                 if ($result) {
                     $this->redirect('user/login');
@@ -85,10 +81,9 @@ class UserController extends BaseController {
     
     // Đăng xuất
     public function logout() {
-        session_unset();
-        session_destroy();
+        session_unset(); // Xóa tất cả các biến session
+        session_destroy(); // Hủy session
         
-        // Lỗ hổng: không xóa các cookie liên quan
         $this->redirect('index.php');
     }
     
@@ -96,7 +91,7 @@ class UserController extends BaseController {
     public function profile() {
         $this->requireLogin();
         
-        $user = $this->getLoggedInUser();
+        $user = $this->getLoggedInUser(); // Lấy thông tin người dùng đã đăng nhập
         $userData = $this->userModel->Get_user($user['username']);
         
         $this->view('user/profile', ['user' => $userData]);
@@ -116,16 +111,17 @@ class UserController extends BaseController {
             $user = $this->getLoggedInUser();
             $userData = $this->userModel->Get_user($user['username']);
             
-            // Lỗ hổng: so sánh mật khẩu không an toàn
-            if ($userData['password'] == $password) {
-                if ($new_password == $confirm_password) {
-                    // Lỗ hổng: không hash mật khẩu mới
-                    $result = $this->userModel->forget_password($user['username'], $new_password);
-                    $this->redirect('index.php?controller=user&action=login');
-                } else {
+            if ($userData['password'] === $password) {
+                if (strlen($new_password) < 6) {
+                    $error = "Mật khẩu phải có ít nhất 6 ký tự";
+                    $this->view('user/forget_password', ['error' => $error]);
+                } elseif ($new_password !== $confirm_password) {
                     $error = "Xác nhận mật khẩu không khớp";
                     $this->view('user/forget_password', ['error' => $error]);
-                }
+                } else {
+                    $result = $this->userModel->forget_password($user['username'], $new_password);
+                    $this->redirect('index.php?controller=user&action=login');
+                } 
             } else {
                 $error = "Mật khẩu hiện tại không đúng";
                 $this->view('user/forget_password', ['error' => $error]);
@@ -142,15 +138,14 @@ class UserController extends BaseController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $postData = $this->getPostData();
             
-            // Lỗ hổng: không lọc đầu vào - có thể dẫn đến XSS
-            $fullname = $postData['fullname'];
-            $phone = $postData['phone'];
-            $gioi_tinh = $postData['gioi_tinh'];
-            $ngay_sinh = $postData['ngay_sinh'];
+            //  lọc đầu vào - để tránh XSS
+            $fullname = htmlspecialchars($postData['fullname']);
+            $phone = htmlspecialchars($postData['phone']);
+            $gioi_tinh = htmlspecialchars($postData['gioi_tinh']);
+            $ngay_sinh = htmlspecialchars($postData['ngay_sinh']);
             
             $user = $this->getLoggedInUser();
             
-            // Lỗ hổng: SQL Injection
             $this->userModel->change_profile($fullname, $ngay_sinh, $gioi_tinh, $phone, $user['username']);
             
             $this->redirect('user/profile');

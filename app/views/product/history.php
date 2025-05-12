@@ -99,9 +99,10 @@
                     <li><a href="index.php?controller=Product&action=gio_hang">Giỏ Hàng</a></li>
                     <?php
                     if (isset($_SESSION['user'])) {
+                        $avatar = !empty($_SESSION['user']['avatar']) ? 'uploads/avatars/' . htmlspecialchars($_SESSION['user']['avatar']) : 'public/assets/images/avatar.jpg';
                         echo '<li>
                                 <a href="index.php?controller=user&action=profile">
-                                    <img src="http://localhost/WEB_MSB/public/assets/images/avatar.jpg" alt="Profile" width="30" style="border-radius: 50%; vertical-align: middle;" />
+                                    <img src="' . $avatar . '" alt="Profile" width="30" style="border-radius: 50%; vertical-align: middle;" />
                                 </a>
                             </li>';
                     } else {

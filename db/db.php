@@ -5,7 +5,7 @@ class Database {
     private $conn;
     private $dbName;
     
-    // Constructor với lỗ hổng: credentials hardcoded - nhưng hỗ trợ kết nối đến database cụ thể
+
     private function __construct($dbname) {
         $servername = "localhost";
         $username = "root";
@@ -21,7 +21,7 @@ class Database {
         }
     }
     
-    // Lấy instance cho users database (DB_User)
+    // Lấy instance cho users database (db_user)
     public static function getUserInstance() {
         if (self::$userInstance == null) {
             self::$userInstance = new Database("db_user");

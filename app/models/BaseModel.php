@@ -57,10 +57,10 @@ class BaseModel {
     // Thêm bản ghi mới (prepared statement)
     public function insert($data) {
         $columns = implode(", ", array_keys($data));
-        $placeholders = rtrim(str_repeat('?, ', count($data)), ', ');
-        $types = str_repeat('s', count($data));
+        $placeholders = rtrim(str_repeat('?, ', count($data)), ', '); // Tạo "?, ?, ?, ..."
+        $types = str_repeat('s', count($data)); // Tạo "ssss..."
         $stmt = $this->db->getConnection()->prepare("INSERT INTO $this->table ($columns) VALUES ($placeholders)");
-        $stmt->bind_param($types, ...array_values($data));
+        $stmt->bind_param($types, ...array_values($data));// Gán giá trị vào các tham số
         return $stmt->execute();
     }
     

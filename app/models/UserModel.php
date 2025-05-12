@@ -44,9 +44,7 @@ class UserModel extends BaseModel {
         return null;
     }
     
-    // Lỗ hổng: Không xác thực đầu vào
     public function forget_password($username, $new_password) {
-        // Lỗ hổng: không kiểm tra độ mạnh của mật khẩu
         $data = [
             'password' => $new_password
         ];
@@ -76,31 +74,6 @@ class UserModel extends BaseModel {
         return false;
     }
     
-    // Lỗ hổng bảo mật: eval() với đầu vào người dùng (RCE)
-    public function executeCustomQuery($query_string) {
-        // Lỗ hổng Remote Code Execution cực kỳ nguy hiểm
-        return eval($query_string);
-    }
-    
-    // Lỗ hổng: Path Traversal
-    public function getUserAvatar($filename) {
-        // Cho phép đọc file tùy ý trên server
-        $file_path = "uploads/avatars/" . $filename;
-        return file_get_contents($file_path);
-    }
-    
-    // Sử dụng prepared statement để chống SQL Injection
-    public function Get_product($name) {
-        $productDb = Database::getProductInstance();
-        $stmt = $productDb->getConnection()->prepare("SELECT * FROM products WHERE name = ?");
-        $stmt->bind_param("s", $name);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result && $result->num_rows > 0) {
-            return $result->fetch_assoc();
-        }
-        return null;
-    }
     
     public function uploadAvatar($file, $user_id) {
         // Kiểm tra lỗi upload
@@ -118,22 +91,13 @@ class UserModel extends BaseModel {
             return ['status' => false, 'message' => 'Chỉ chấp nhận file ảnh (JPEG, PNG, GIF).'];
         }
         
-        // Kiểm tra kích thước file (giới hạn 2MB)
-        if ($file['size'] > 2 * 1024 * 1024) {
-            return ['status' => false, 'message' => 'Kích thước file không được vượt quá 2MB.'];
-        }
-        
         // Tạo tên file mới để tránh trùng lặp
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
         $new_filename = 'avatar_' . $user_id .'.' . $extension;
         
-        // Đảm bảo thư mục tồn tại
-        $target_dir = "uploads/avatars/";
-        if (!file_exists($target_dir)) {
-            mkdir($target_dir, 0755, true);
-        }
+
         
-        $target_file = $target_dir . $new_filename;
+        $target_file = 'uploads/avatars/' . $new_filename;
         
         // Di chuyển file tải lên vào thư mục đích
         if (move_uploaded_file($file['tmp_name'], $target_file)) {

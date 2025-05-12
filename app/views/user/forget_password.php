@@ -23,6 +23,9 @@
         <input type="password" id="confirm_password" name="confirm_password" required>
 
         <button type="submit" name="submit">Đổi mật khẩu</button>
+        <div style="margin-top: 16px; text-align: center;">
+            <a href="index.php?controller=user&action=profile" style="color: #007bff; text-decoration: underline;">← Quay lại trang cá nhân</a>
+        </div>
     </form>
 </body>
 </html>
