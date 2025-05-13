@@ -64,6 +64,7 @@
       
       <form method="POST" action="index.php?controller=product&action=buy_now&id=<?= $product['product_id'] ?>" class="space-y-4">
         <input type="hidden" name="checkout" value="1">
+        <input type="hidden" name="quantity" value="<?= $product['quantity'] ?>">
         
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Họ tên</label>
@@ -114,7 +115,7 @@
       </form>
       
       <div class="mt-4">
-        <a href="index.php?controller=product&action=detail&id=<?= $product['product_id'] ?>" 
+        <a href="index.php?controller=product&action=details_product&id=<?= $product['product_id'] ?>" 
            class="text-blue-500 hover:underline text-sm">
           « Quay lại sản phẩm
         </a>

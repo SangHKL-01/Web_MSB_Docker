@@ -538,10 +538,11 @@
             </p>
             <div class="mt-4">
               <?php if (isset($item['stock']) && $item['stock'] > 0): ?>
-              <a href="index.php?controller=product&action=insert_cart&id=<?= $item['id'] ?>"
-                 class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition block text-center">
-                Thêm vào giỏ
-              </a>
+                <?php if (!isset($isOrderDetailPage) || !$isOrderDetailPage): ?>
+                  <a href="index.php?controller=product&action=insert_cart&id=<?= $item['id'] ?>" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition block text-center">
+                    Thêm vào giỏ
+                  </a>
+                <?php endif; ?>
               <?php else: ?>
               <span class="bg-gray-300 text-gray-600 px-4 py-2 rounded-lg block text-center">
                 Hết hàng
@@ -577,7 +578,7 @@
           <img id="modalProductImg" class="modal-product-img" src="" alt="Ảnh sản phẩm">
           <div class="modal-product-name" id="modalProductName"></div>
           <div class="modal-product-desc" id="modalProductDesc"></div>
-          <h3>Nhập số lượng muốn mua</h3>
+          <h3>Nhập số lượng</h3>
           <form id="buyNowForm" style="margin-bottom:0; text-align:center;">
               <input type="number" id="buyNowQuantity" name="quantity" value="1" min="1">
               <input type="hidden" id="buyNowProductId" name="id" value="">

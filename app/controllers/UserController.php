@@ -139,10 +139,16 @@ class UserController extends BaseController {
             $gioi_tinh = htmlspecialchars($postData['gioi_tinh']);
             $ngay_sinh = htmlspecialchars($postData['ngay_sinh']);
             
+            // Validate số điện thoại
+            if (!preg_match('/^[0-9]{10,11}$/', $phone)) {
+                $_SESSION['error'] = "Số điện thoại phải chỉ chứa các ký tự số và có 10-11 số.";
+                $user = $this->getLoggedInUser();
+                $userData = $this->userModel->Get_user($user['username']);
+                $this->view('user/profile', ['user' => $userData]);
+                return;
+            }
             $user = $this->getLoggedInUser();
-            
             $this->userModel->change_profile($fullname, $ngay_sinh, $gioi_tinh, $phone, $user['username']);
-            
             $this->redirect('user/profile');
         }
     }

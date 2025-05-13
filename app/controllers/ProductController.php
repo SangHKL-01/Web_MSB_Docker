@@ -414,6 +414,18 @@ class ProductController extends BaseController {
         
         // Trong phương thức buy_now()
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['checkout'])) {
+            // Lấy lại số lượng từ POST nếu có
+            $quantity = isset($_POST['quantity']) ? (int)$_POST['quantity'] : $buy_now_product['quantity'];
+            $buy_now_product['quantity'] = $quantity;
+
+            // Kiểm tra lại tồn kho với số lượng mới
+            $product = $this->productModel->Get_product($buy_now_product['product_id']);
+            if ($product['stock'] < $quantity) {
+                $_SESSION['error'] = "Số lượng sản phẩm trong kho không đủ. Hiện chỉ còn {$product['stock']} sản phẩm.";
+                $this->redirect('index.php?controller=product&action=buy_now&id=' . $buy_now_product['product_id']);
+                exit;
+            }
+            
             // Xử lý thanh toán tương tự như phương thức checkout
             $customer_name = isset($_POST['fullname']) ? $_POST['fullname'] : '';
             $email = isset($_POST['email']) ? $_POST['email'] : '';
@@ -425,21 +437,21 @@ class ProductController extends BaseController {
             // Kiểm tra thông tin người dùng
             if (empty($customer_name) || empty($phone) || empty($address)) {
                 $_SESSION['error'] = "Vui lòng điền đầy đủ thông tin bắt buộc.";
-                $this->redirect('index.php?controller=product&action=buy_now&id=' . $product_id);
+                $this->redirect('index.php?controller=product&action=buy_now&id=' . $buy_now_product['product_id']);
                 exit;
             }
             
             // Kiểm tra số điện thoại chỉ chứa số
             if (!preg_match('/^\d+$/', $phone)) {
                 $_SESSION['error'] = "Số điện thoại chỉ được chứa chữ số.";
-                $this->redirect('index.php?controller=product&action=buy_now&id=' . $product_id);
+                $this->redirect('index.php?controller=product&action=buy_now&id=' . $buy_now_product['product_id']);
                 exit;
             }
             
             // Kiểm tra độ dài số điện thoại
             if (strlen($phone) < 10 || strlen($phone) > 11) {
                 $_SESSION['error'] = "Số điện thoại phải có 10-11 chữ số.";
-                $this->redirect('index.php?controller=product&action=buy_now&id=' . $product_id);
+                $this->redirect('index.php?controller=product&action=buy_now&id=' . $buy_now_product['product_id']);
                 exit;
             }
             
@@ -485,7 +497,7 @@ class ProductController extends BaseController {
                 exit;
             } else {
                 $_SESSION['error'] = "Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.";
-                $this->redirect('index.php?controller=product&action=buy_now&id=' . $product_id);
+                $this->redirect('index.php?controller=product&action=buy_now&id=' . $buy_now_product['product_id']);
                 exit;
             }
         }

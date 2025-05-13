@@ -243,9 +243,9 @@
                         <div class="product-actions">
                             <a href="index.php?controller=Product&action=details_product&id=<?= $product['id'] ?>" class="btn btn-sm btn-primary">Xem Chi Tiết</a>
                             <?php if ($product['stock'] > 0): ?>
-                                <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>" style="display:inline;">
+                                <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>" class="add-to-cart-form" data-product-id="<?= $product['id'] ?>" style="display:inline;">
                                     <input type="hidden" name="quantity" value="1">
-                                    <button type="submit" class="btn btn-sm btn-secondary">Thêm vào Giỏ</button>
+                                    <button type="button" class="btn btn-sm btn-secondary add-to-cart-btn-modal" data-product-id="<?= $product['id'] ?>">Thêm vào Giỏ</button>
                                 </form>
                                 <button type="button" class="btn btn-sm btn-accent buy-now-btn" data-product-id="<?= $product['id'] ?>">Mua ngay</button>
                             <?php else: ?>
@@ -275,9 +275,9 @@
                         <div class="product-actions">
                             <a href="index.php?controller=Product&action=details_product&id=<?= $product['id'] ?>" class="btn btn-sm btn-primary">Xem Chi Tiết</a>
                             <?php if ($product['stock'] > 0): ?>
-                                <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>" style="display:inline;">
+                                <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>" class="add-to-cart-form" data-product-id="<?= $product['id'] ?>" style="display:inline;">
                                     <input type="hidden" name="quantity" value="1">
-                                    <button type="submit" class="btn btn-sm btn-secondary">Thêm vào Giỏ</button>
+                                    <button type="button" class="btn btn-sm btn-secondary add-to-cart-btn-modal" data-product-id="<?= $product['id'] ?>">Thêm vào Giỏ</button>
                                 </form>
                                 <button type="button" class="btn btn-sm btn-accent buy-now-btn" data-product-id="<?= $product['id'] ?>">Mua ngay</button>
                             <?php else: ?>
@@ -307,9 +307,9 @@
                         <div class="product-actions">
                             <a href="index.php?controller=Product&action=details_product&id=<?= $product['id'] ?>" class="btn btn-sm btn-primary">Xem Chi Tiết</a>
                             <?php if ($product['stock'] > 0): ?>
-                                <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>" style="display:inline;">
+                                <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>" class="add-to-cart-form" data-product-id="<?= $product['id'] ?>" style="display:inline;">
                                     <input type="hidden" name="quantity" value="1">
-                                    <button type="submit" class="btn btn-sm btn-secondary">Thêm vào Giỏ</button>
+                                    <button type="button" class="btn btn-sm btn-secondary add-to-cart-btn-modal" data-product-id="<?= $product['id'] ?>">Thêm vào Giỏ</button>
                                 </form>
                                 <button type="button" class="btn btn-sm btn-accent buy-now-btn" data-product-id="<?= $product['id'] ?>">Mua ngay</button>
                             <?php else: ?>
@@ -470,6 +470,70 @@
         var val = parseInt(buyNowQuantity.value) || 1;
         if (val > currentStock) buyNowQuantity.value = currentStock;
         if (val < 1) buyNowQuantity.value = 1;
+    });
+    document.querySelectorAll('.increase-qty-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = btn.getAttribute('data-product-id');
+            var input = document.getElementById('qty-input-' + id);
+            var max = parseInt(input.getAttribute('max')) || 9999;
+            var val = parseInt(input.value) || 1;
+            if (val < max) input.value = val + 1;
+        });
+    });
+    document.querySelectorAll('.decrease-qty-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = btn.getAttribute('data-product-id');
+            var input = document.getElementById('qty-input-' + id);
+            var val = parseInt(input.value) || 1;
+            if (val > 1) input.value = val - 1;
+        });
+    });
+    document.querySelectorAll('.qty-input').forEach(function(input) {
+        input.addEventListener('input', function() {
+            var max = parseInt(input.getAttribute('max')) || 9999;
+            var val = parseInt(input.value) || 1;
+            if (val > max) input.value = max;
+            if (val < 1) input.value = 1;
+        });
+    });
+    // Thêm modal chọn số lượng cho Thêm vào giỏ hàng
+    var addToCartBtns = document.querySelectorAll('.add-to-cart-btn-modal');
+    addToCartBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var productId = btn.getAttribute('data-product-id');
+            openBuyNowModal(productId); // Dùng lại modal của Mua ngay
+            // Đổi nút xác nhận trong modal thành "Thêm vào giỏ hàng"
+            var confirmBtn = buyNowForm.querySelector('button[type="submit"]');
+            confirmBtn.textContent = 'Thêm vào Giỏ';
+            // Gắn sự kiện submit mới cho modal
+            buyNowForm.onsubmit = function(e) {
+                e.preventDefault();
+                var quantity = buyNowQuantity.value;
+                if (!quantity || quantity < 1) quantity = 1;
+                // Submit form ẩn tương ứng với sản phẩm
+                var form = document.querySelector('.add-to-cart-form[data-product-id="' + productId + '"]');
+                if (form) {
+                    form.querySelector('input[name="quantity"]').value = quantity;
+                    form.submit();
+                }
+                closeBuyNow();
+            };
+        });
+    });
+    // Khi nhấn nút Mua ngay thì modal vẫn là Xác nhận
+    buyNowBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var productId = btn.getAttribute('data-product-id');
+            openBuyNowModal(productId);
+            var confirmBtn = buyNowForm.querySelector('button[type="submit"]');
+            confirmBtn.textContent = 'Xác nhận';
+            buyNowForm.onsubmit = function(e) {
+                e.preventDefault();
+                var quantity = buyNowQuantity.value;
+                if (!quantity || quantity < 1) quantity = 1;
+                window.location.href = 'index.php?controller=Product&action=buy_now&id=' + encodeURIComponent(productId) + '&quantity=' + encodeURIComponent(quantity);
+            };
+        });
     });
     </script>
 </body>

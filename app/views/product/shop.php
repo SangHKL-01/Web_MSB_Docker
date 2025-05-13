@@ -249,9 +249,9 @@
                         <div class="product-actions">
                             <a href="index.php?controller=Product&action=details_product&id=<?= $product['id'] ?>" class="btn btn-sm btn-primary">Xem Chi Tiết</a>
                             <?php if ($product['stock'] > 0): ?>
-                                <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>" style="display:inline;">
+                                <form method="POST" action="index.php?controller=Product&action=insert_cart&id=<?= $product['id'] ?>" class="add-to-cart-form" data-product-id="<?= $product['id'] ?>" style="display:inline;">
                                     <input type="hidden" name="quantity" value="1">
-                                    <button type="submit" class="btn btn-sm btn-secondary">Thêm vào Giỏ</button>
+                                    <button type="button" class="btn btn-sm btn-secondary add-to-cart-btn-modal" data-product-id="<?= $product['id'] ?>">Thêm vào Giỏ</button>
                                 </form>
                                 <button type="button" class="btn btn-sm btn-accent buy-now-btn" data-product-id="<?= $product['id'] ?>">Mua ngay</button>
                             <?php else: ?>
@@ -283,14 +283,14 @@
         </div>
     </footer>
 
-    <!-- Modal nhập số lượng cho Mua ngay -->
+    <!-- Modal nhập số lượng cho Mua ngay và Thêm vào giỏ -->
     <div id="buyNowModal">
         <div class="modal-content">
             <span class="close-x" id="closeBuyNowModalX">&times;</span>
             <img id="modalProductImg" class="modal-product-img" src="" alt="Ảnh sản phẩm">
             <div class="modal-product-name" id="modalProductName"></div>
             <div class="modal-product-desc" id="modalProductDesc"></div>
-            <h3>Nhập số lượng muốn mua</h3>
+            <h3>Nhập số lượng</h3>
             <form id="buyNowForm" style="margin-bottom:0; text-align:center;">
                 <input type="number" id="buyNowQuantity" name="quantity" value="1" min="1">
                 <input type="hidden" id="buyNowProductId" name="id" value="">
@@ -338,7 +338,7 @@
             modalProductName.textContent = productData[productId].name;
             modalProductDesc.textContent = productData[productId].desc;
             // Lấy tồn kho từ đúng product-card
-            var btn = document.querySelector('.buy-now-btn[data-product-id="' + productId + '"]');
+            var btn = document.querySelector('.buy-to-cart-btn[data-product-id="' + productId + '"]');
             var card = btn ? btn.closest('.product-card[data-stock]') : null;
             var stock = card ? parseInt(card.getAttribute('data-stock')) : 9999;
             buyNowQuantity.max = stock;
@@ -379,6 +379,31 @@
         var quantity = buyNowQuantity.value;
         if (!quantity || quantity < 1) quantity = 1;
         window.location.href = 'index.php?controller=Product&action=buy_now&id=' + encodeURIComponent(productId) + '&quantity=' + encodeURIComponent(quantity);
+    });
+
+    // Thêm modal chọn số lượng cho Thêm vào giỏ hàng
+    var addToCartBtns = document.querySelectorAll('.add-to-cart-btn-modal');
+    addToCartBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var productId = btn.getAttribute('data-product-id');
+            openBuyNowModal(productId); // Dùng lại modal của Mua ngay
+            // Đổi nút xác nhận trong modal thành "Thêm vào giỏ hàng"
+            var confirmBtn = buyNowForm.querySelector('button[type="submit"]');
+            confirmBtn.textContent = 'Thêm vào Giỏ';
+            // Gắn sự kiện submit mới cho modal
+            buyNowForm.onsubmit = function(e) {
+                e.preventDefault();
+                var quantity = buyNowQuantity.value;
+                if (!quantity || quantity < 1) quantity = 1;
+                // Submit form ẩn tương ứng với sản phẩm
+                var form = document.querySelector('.add-to-cart-form[data-product-id="' + productId + '"]');
+                if (form) {
+                    form.querySelector('input[name="quantity"]').value = quantity;
+                    form.submit();
+                }
+                closeBuyNow();
+            };
+        });
     });
     </script>
 </body>
