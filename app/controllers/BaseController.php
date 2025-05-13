@@ -100,15 +100,19 @@ class BaseController {
             return 0;
         }
         
-        $user_id = $conn->real_escape_string($user['id']);
+        $user_id = $user['id'];
         
-        // Lấy tổng số sản phẩm trong giỏ hàng
-        $sql = "SELECT SUM(quantity) as total FROM carts WHERE user_id = '$user_id'";
-        $result = $conn->query($sql);
-        
-        if ($result && $result->num_rows > 0) {
-            $row = $result->fetch_assoc();
-            return $row['total'] ? $row['total'] : 0;
+        // Lấy tổng số sản phẩm trong giỏ hàng sử dụng prepared statement
+        $sql = "SELECT SUM(quantity) as total FROM carts WHERE user_id = ?";
+        $stmt = $conn->prepare($sql);
+        if ($stmt) {
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result && $row = $result->fetch_assoc()) {
+                return $row['total'] ? $row['total'] : 0;
+            }
+            $stmt->close();
         }
         
         return 0;

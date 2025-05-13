@@ -275,10 +275,10 @@
         <div class="footer-content">
             <p>&copy; 2023 Kheo Báng Shop. Tất cả quyền lợi được bảo vệ.</p>
             <ul class="footer-links">
-                <li><a href="#">Chính Sách Bảo Mật</a></li>
-                <li><a href="#">Điều Khoản Sử Dụng</a></li>
-                <li><a href="#">FAQ</a></li>
-                <li><a href="#">Liên Hệ</a></li>
+                <li>Chính Sách Bảo Mật</li>
+                <li>Điều Khoản Sử Dụng</li>
+                <li>FAQ</li>
+                <li>Liên Hệ</li>
             </ul>
         </div>
     </footer>

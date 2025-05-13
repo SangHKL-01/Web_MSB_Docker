@@ -32,24 +32,6 @@ class Product_Model extends BaseModel {
         }
         $products = [];
         while ($row = $result->fetch_assoc()) {
-            // Nếu không có giá trong giỏ hàng hoặc giá = 0, lấy giá từ bảng products
-            if ((!isset($row['price']) || $row['price'] == 0) && isset($row['product_id'])) {
-                $product_id = $row['product_id'];
-                $productStmt = $conn->prepare("SELECT id, price, name FROM products WHERE id = ?");
-                $productStmt->bind_param("i", $product_id);
-                $productStmt->execute();
-                $productResult = $productStmt->get_result();
-                if ($productResult && $productResult->num_rows > 0) {
-                    $productInfo = $productResult->fetch_assoc();
-                    $row['price'] = $productInfo['price'];
-                    if (empty($row['name_product'])) {
-                        $row['name_product'] = $productInfo['name'];
-                    }
-                    $updateStmt = $conn->prepare("UPDATE carts SET price = ? WHERE id = ?");
-                    $updateStmt->bind_param("di", $productInfo['price'], $row['id']);
-                    $updateStmt->execute();
-                }
-            }
             $products[] = $row;
         }
         return $products;
@@ -74,25 +56,18 @@ class Product_Model extends BaseModel {
         $price = (float)$price; // Đảm bảo giá là số thực
         $product_id = $conn->real_escape_string($product_id);
         
-        // Nếu giá = 0, lấy giá từ bảng products
-        if ($price == 0 || empty($price)) {
-            $query = "SELECT price FROM products WHERE id = '$product_id' LIMIT 1";
-            $result = $conn->query($query);
-            
-            if ($result && $result->num_rows > 0) {
-                $productInfo = $result->fetch_assoc();
-                $price = $productInfo['price'];
-                error_log("Retrieved price $price for product ID: $product_id");
-            }
-        }
+        // Kiểm tra sản phẩm đã tồn tại trong giỏ hàng chưa (prepared statement)
+        $checkExistStmt = $conn->prepare("SELECT id, quantity FROM carts WHERE user_id = ? AND product_id = ?");
+        $checkExistStmt->bind_param("ii", $user_id, $product_id);
+        $checkExistStmt->execute();
+        $existResult = $checkExistStmt->get_result();
         
-        // Kiểm tra sản phẩm đã tồn tại trong giỏ hàng chưa
-        $checkExist = "SELECT id, quantity FROM carts WHERE user_id = '$user_id' AND product_id = '$product_id'";
-        $existResult = $conn->query($checkExist);
+        // Lấy số lượng tồn kho hiện tại của sản phẩm (prepared statement)
+        $stockStmt = $conn->prepare("SELECT stock FROM products WHERE id = ? LIMIT 1");
+        $stockStmt->bind_param("i", $product_id);
+        $stockStmt->execute();
+        $stockResult = $stockStmt->get_result();
         
-        // Lấy số lượng tồn kho hiện tại của sản phẩm
-        $stockSql = "SELECT stock FROM products WHERE id = '$product_id' LIMIT 1";
-        $stockResult = $conn->query($stockSql);
         if ($stockResult && $stockResult->num_rows > 0) {
             $stockRow = $stockResult->fetch_assoc();
             $stock = (int)$stockRow['stock'];
@@ -103,7 +78,8 @@ class Product_Model extends BaseModel {
                 'message' => 'Không tìm thấy sản phẩm.'
             ];
         }
-        
+         
+        //đã tồn tại trong giỏ hàng, cập nhật số lượng
         if ($existResult && $existResult->num_rows > 0) {
             $existItem = $existResult->fetch_assoc();
             $checkQuantity = $existItem['quantity'] + $quantity;
@@ -118,12 +94,12 @@ class Product_Model extends BaseModel {
             }
             $cartId = $existItem['id'];
             
-            $updateSql = "UPDATE carts SET quantity = '$newQuantity' WHERE id = '$cartId'";
-            $result = $conn->query($updateSql);
+            $updateStmt = $conn->prepare("UPDATE carts SET quantity = ? WHERE id = ?");
+            $updateStmt->bind_param("ii", $newQuantity, $cartId);
+            $result = $updateStmt->execute();
             
             if (!$result) {
                 error_log("SQL Error in updating cart: " . $conn->error);
-                error_log("SQL Query: " . $updateSql);
                 return [
                     'status' => false,
                     'message' => 'Lỗi khi cập nhật giỏ hàng.'
@@ -143,15 +119,13 @@ class Product_Model extends BaseModel {
                 'message' => 'Số lượng sản phẩm vượt quá số lượng trong kho. Vui lòng chọn số lượng nhỏ hơn!'
             ];
         }
-        // Thêm mới sản phẩm vào giỏ hàng
-        $insertSql = "INSERT INTO carts (user_id, product_id, product_name, quantity, price) 
-                     VALUES ('$user_id', '$product_id', '$name_product', '$quantity', '$price')";
-        
-        $result = $conn->query($insertSql);
+        // Thêm mới sản phẩm vào giỏ hàng (prepared statement)
+        $insertStmt = $conn->prepare("INSERT INTO carts (user_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)");
+        $insertStmt->bind_param("iisid", $user_id, $product_id, $name_product, $quantity, $price);
+        $result = $insertStmt->execute();
         
         if (!$result) {
             error_log("SQL Error in insert_cart: " . $conn->error);
-            error_log("SQL Query: " . $insertSql);
             return [
                 'status' => false,
                 'message' => 'Lỗi khi thêm sản phẩm vào giỏ hàng.'
@@ -202,27 +176,22 @@ class Product_Model extends BaseModel {
         return false;
     }
     
-    // Lỗ hổng: Command Injection
-    public function generateProductThumbnail($image_path, $width, $height) {
-        // Lỗ hổng command injection thông qua đầu vào người dùng không được lọc
-        $output_path = "uploads/products/thumbnails/" . basename($image_path);
-        $command = "convert $image_path -resize {$width}x{$height} $output_path";
-        
-        // Thực thi lệnh hệ thống mà không lọc đầu vào
-        system($command);
-        
-        return $output_path;
-    }
     
-    // Lỗ hổng: Insecure Direct Object Reference (IDOR)
-    public function getUserProduct($product_id, $user_id) {
-        // Không kiểm tra xem sản phẩm có thuộc về người dùng hay không
-        return $this->getById($product_id);
-    }
-    
-    // Lỗ hổng: Blind SQL Injection trong sắp xếp/lọc sản phẩm
     public function getProductsWithSorting($sort_column, $sort_direction) {
-        // Không kiểm tra/escape các tham số sắp xếp
+        // Whitelist các cột được phép sắp xếp
+        $allowed_columns = ['id', 'name', 'price', 'quantity', 'created_at'];
+        $allowed_directions = ['ASC', 'DESC'];
+        
+        // Kiểm tra sort_column hợp lệ
+        if (!in_array($sort_column, $allowed_columns)) {
+            $sort_column = 'id'; // mặc định
+        }
+        // Kiểm tra sort_direction hợp lệ
+        $sort_direction = strtoupper($sort_direction);
+        if (!in_array($sort_direction, $allowed_directions)) {
+            $sort_direction = 'ASC'; // mặc định
+        }
+        
         $sql = "SELECT * FROM $this->table ORDER BY $sort_column $sort_direction";
         $result = $this->db->query($sql);
         $data = [];
@@ -330,16 +299,15 @@ class Product_Model extends BaseModel {
         $payment_method = isset($data['payment_method']) ? $conn->real_escape_string($data['payment_method']) : 'COD';
         $notes = isset($data['notes']) ? $conn->real_escape_string($data['notes']) : '';
         
-        // Chỉ thực hiện insert, không kiểm tra bảng/cột nữa
-        $sql = "INSERT INTO orders (user_id, total_amount, customer_name, customer_phone, customer_address, payment_method, notes) 
-                VALUES ('$user_id', '$total_amount', '$customer_name', '$customer_phone', '$customer_address', '$payment_method', '$notes')";
-        
-        if ($conn->query($sql)) {
-            $order_id = $conn->insert_id;
+        $stmt = $conn->prepare("INSERT INTO orders (user_id, total_amount, customer_name, customer_phone, customer_address, payment_method, notes) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("idsssss", $user_id, $total_amount, $customer_name, $customer_phone, $customer_address, $payment_method, $notes);
+
+        // Thực thi câu lệnh
+        if ($stmt->execute()) {  
+            $order_id = $conn->insert_id; // Lấy ID của đơn hàng vừa tạo để sử dụng cho chi tiết đơn hàng
             return $order_id;
         } else {
             error_log("Error creating order: " . $conn->error);
-            error_log("SQL Query: " . $sql);
             return false;
         }
     }
@@ -444,21 +412,6 @@ class Product_Model extends BaseModel {
         }
         $orders = [];
         while ($row = $result->fetch_assoc()) {
-            if (!isset($row['customer_name'])) {
-                $row['customer_name'] = 'Khách hàng';
-            }
-            if (!isset($row['customer_phone'])) {
-                $row['customer_phone'] = '';
-            }
-            if (!isset($row['customer_address'])) {
-                $row['customer_address'] = '';
-            }
-            if (!isset($row['payment_method'])) {
-                $row['payment_method'] = 'Thanh toán khi nhận hàng';
-            }
-            if (!isset($row['notes'])) {
-                $row['notes'] = '';
-            }
             $orders[] = $row;
         }
         return $orders;
@@ -479,25 +432,6 @@ class Product_Model extends BaseModel {
         if ($result) {
             $items = [];
             while ($row = $result->fetch_assoc()) {
-                if (($row['price'] == 0 || empty($row['price'])) && isset($row['product_id']) && !empty($row['product_id'])) {
-                    $productId = $row['product_id'];
-                    $productStmt = $conn->prepare("SELECT price FROM products WHERE id = ?");
-                    $productStmt->bind_param("i", $productId);
-                    $productStmt->execute();
-                    $productResult = $productStmt->get_result();
-                    if ($productResult && $productResult->num_rows > 0) {
-                        $productInfo = $productResult->fetch_assoc();
-                        $row['price'] = $productInfo['price'];
-                        $updateStmt = $conn->prepare("UPDATE order_details SET price = ? WHERE id = ?");
-                        $updateStmt->bind_param("di", $productInfo['price'], $row['id']);
-                        $updateStmt->execute();
-                        error_log("Updated price for order detail ID {$row['id']} to {$productInfo['price']}");
-                    }
-                }
-                if ($row['price'] == 0 || empty($row['price'])) {
-                    error_log("Warning: Order detail ID {$row['id']} has zero price for product: {$row['product_name']}");
-                    $row['price'] = 10000;
-                }
                 $items[] = $row;
             }
             return $items;

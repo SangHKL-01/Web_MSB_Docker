@@ -81,9 +81,6 @@ class ProductController extends BaseController {
                 if (is_array($result) && isset($result['status']) && $result['status'] === true) {
                     // Đặt thông báo thành công vào session
                     $_SESSION['cart_message'] = $result['message'];
-                    // Lấy số lượng giỏ hàng mới và cập nhật sessionStorage
-                    $cartCount = $this->getCartItemCount();
-                    echo "<script>sessionStorage.setItem('cartCount', {$cartCount});</script>";
                     // Chuyển hướng trở lại trang trước đó
                     header("Location: $referer");
                     exit();
@@ -179,7 +176,6 @@ class ProductController extends BaseController {
         $queryData = $this->getQueryData();
         
         if (isset($queryData['keyword'])) {
-            // Lọc đầu vào để tránh XSS
             $keyword = $queryData['keyword'];
             
             // Thực hiện tìm kiếm sản phẩm với từ khóa đã được lọc
@@ -206,9 +202,9 @@ class ProductController extends BaseController {
             // Cần thêm phương thức này vào model
             $result = $this->productModel->remove_from_cart($cart_id, $user['id']);
             
-            $this->redirect('index.php?controller=product&action=gio_hang');
+            $this->redirect('product/gio_hang');
         } else {
-            $this->redirect('index.php?controller=product&action=gio_hang');
+            $this->redirect('product/gio_hang');
         }
     }
     
@@ -246,21 +242,21 @@ class ProductController extends BaseController {
             // Kiểm tra thông tin người dùng
             if (empty($customer_name) || empty($phone) || empty($address)) {
                 $_SESSION['error'] = "Vui lòng điền đầy đủ thông tin bắt buộc.";
-                $this->redirect('index.php?controller=product&action=checkout');
+                $this->redirect('product/checkout');
                 exit;
             }
             
             // Kiểm tra số điện thoại chỉ chứa số
             if (!preg_match('/^\d+$/', $phone)) {
                 $_SESSION['error'] = "Số điện thoại chỉ được chứa chữ số.";
-                $this->redirect('index.php?controller=product&action=checkout');
+                $this->redirect('product/checkout');
                 exit;
             }
             
             // Kiểm tra độ dài số điện thoại
             if (strlen($phone) < 10 || strlen($phone) > 11) {
                 $_SESSION['error'] = "Số điện thoại phải có 10-11 chữ số.";
-                $this->redirect('index.php?controller=product&action=checkout');
+                $this->redirect('product/checkout');
                 exit;
             }
             
@@ -307,17 +303,15 @@ class ProductController extends BaseController {
                 // Xóa giỏ hàng sau khi đặt hàng thành công
                 $this->productModel->clearCart($user_id);
                 
-                // Cập nhật sessionStorage để hiển thị số lượng giỏ hàng = 0
-                echo "<script>sessionStorage.setItem('cartCount', 0);</script>";
 
                 // Lưu ID đơn hàng vừa tạo để hiển thị trong trang cảm ơn
                 $_SESSION['last_order_id'] = $order_id;
                 $_SESSION['success'] = "Đặt hàng thành công.";
-                $this->redirect('index.php?controller=product&action=thank_you');
+                $this->redirect('product/thank_you');
                 exit;
             } else {
                 $_SESSION['error'] = "Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.";
-                $this->redirect('index.php?controller=product&action=checkout');
+                $this->redirect('product/checkout');
                 exit;
             }
         }
@@ -326,7 +320,7 @@ class ProductController extends BaseController {
         $this->view('product/checkout', ['products' => $cart_items]);
     }
     
-    // Phương thức này duy trình với các liên kết cũ
+    // Hiển thị chi tiết sản phẩm
     public function details_product() {
         $queryData = $this->getQueryData();
         
@@ -353,7 +347,6 @@ class ProductController extends BaseController {
                 // Lấy số lượng sản phẩm trong giỏ hàng
                 $cartItemCount = $this->getCartItemCount();
                 
-                // Sử dụng view detail.php thay vì details_product.php
                 $this->view('product/detail', [
                     'product' => $product,
                     'recentlyViewed' => array_slice($recentlyViewed, 0, 4), // Giới hạn hiển thị 4 sản phẩm
@@ -488,7 +481,7 @@ class ProductController extends BaseController {
                 // Lưu ID đơn hàng vừa tạo để hiển thị trong trang cảm ơn
                 $_SESSION['last_order_id'] = $order_id;
                 $_SESSION['success'] = "Đặt hàng thành công.";
-                $this->redirect('index.php?controller=product&action=thank_you');
+                $this->redirect('product/thank_you');
                 exit;
             } else {
                 $_SESSION['error'] = "Đã xảy ra lỗi khi xử lý đơn hàng. Vui lòng thử lại.";

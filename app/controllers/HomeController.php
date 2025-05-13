@@ -96,17 +96,5 @@ public function about() {
             'cartItemCount' => $cartItemCount // Thêm biến cartItemCount vào mảng
         ]);
     }
-    // Lỗ hổng: Local File Inclusion
-    public function page() {
-        $queryData = $this->getQueryData();
-        
-        if (isset($queryData['name'])) {
-            $page = $queryData['name'];
-            // Lỗ hổng LFI: không kiểm tra tệp
-            include 'app/views/pages/' . $page . '.php';
-        } else {
-            $this->redirect('index.php');
-        }
-    }
 }
 ?>
