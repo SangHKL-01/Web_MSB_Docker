@@ -22,11 +22,6 @@ class UserController extends BaseController {
 
             if ($user) {
                 $this->setSession('user', $user);
-                
-                if (isset($postData['remember_me'])) {
-                    setcookie('remembered_user', $username, time() + 30 * 24 * 60 * 60, '/');
-                }
-                
                 // Kiểm tra quyền và chuyển hướng người dùng admin đến trang quản trị
                 if (isset($user['role']) && $user['role'] === 'admin') {
                     $this->redirect('admin/index');
@@ -152,18 +147,6 @@ class UserController extends BaseController {
         }
     }
     
-    // Lỗ hổng: Path Traversal trong xem avatar
-    public function viewAvatar() {
-        if (isset($_GET['file'])) {
-            // Lỗ hổng: không kiểm tra/lọc tên tệp - Path Traversal
-            $file = $_GET['file'];
-            $avatar = $this->userModel->getUserAvatar($file);
-            
-            header('Content-Type: image/jpeg');
-            echo $avatar;
-            exit;
-        }
-    }
     
     public function upload_avatar() {
         $this->requireLogin();

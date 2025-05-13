@@ -1,5 +1,6 @@
 <?php
-// Bắt đầu phiên làm việc
+ini_set('session.gc_maxlifetime', 86400); // Session tồn tại 1 ngày
+session_set_cookie_params(86400); // Cookie session tồn tại 1 ngày
 session_start();
 
 // Xử lý autoload các lớp (tùy chọn nhưng rất hữu ích cho MVC)

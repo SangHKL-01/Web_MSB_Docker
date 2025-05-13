@@ -259,10 +259,10 @@ class Product_Model extends BaseModel {
         // Lấy thông tin chi tiết cho mỗi sản phẩm
         foreach ($recent_array as $product_id) {
             $product_id = (int)$product_id; // Đảm bảo product_id là số nguyên
-            
-            $query = "SELECT * FROM products WHERE id = $product_id LIMIT 1";
-            $result = $conn->query($query);
-            
+            $stmt = $conn->prepare("SELECT * FROM products WHERE id = ? LIMIT 1");
+            $stmt->bind_param("i", $product_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
             if ($result && $result->num_rows > 0) {
                 $products[] = $result->fetch_assoc();
             }
@@ -331,29 +331,30 @@ class Product_Model extends BaseModel {
         
         // LUÔN lấy giá từ bảng products nếu có product_id, bất kể giá truyền vào là bao nhiêu
         if ($product_id != 'NULL') {
-            $productSql = "SELECT price FROM products WHERE id = '$product_id'";
-            $productResult = $conn->query($productSql);
-            
+            $productIdInt = (int)$data['product_id'];
+            $productStmt = $conn->prepare("SELECT price FROM products WHERE id = ?");
+            $productStmt->bind_param("i", $productIdInt);
+            $productStmt->execute();
+            $productResult = $productStmt->get_result();
             if ($productResult && $productResult->num_rows > 0) {
                 $productInfo = $productResult->fetch_assoc();
-                $price = $conn->real_escape_string($productInfo['price']);
+                $price = $productInfo['price'];
                 error_log("Using price $price from products table for order detail of product ID $product_id");
             } else {
                 error_log("Warning: Product with ID $product_id not found in products table");
             }
         }
-        
         // Nếu vẫn không có giá, ghi log cảnh báo
         if ($price == 0 || empty($price)) {
             error_log("Warning: Creating order detail with zero price for product: $product_name");
-            
             // Thử tìm giá dựa trên tên sản phẩm
-            $productNameSql = "SELECT price FROM products WHERE name = '$product_name' LIMIT 1";
-            $productNameResult = $conn->query($productNameSql);
-            
+            $productNameStmt = $conn->prepare("SELECT price FROM products WHERE name = ? LIMIT 1");
+            $productNameStmt->bind_param("s", $product_name);
+            $productNameStmt->execute();
+            $productNameResult = $productNameStmt->get_result();
             if ($productNameResult && $productNameResult->num_rows > 0) {
                 $productInfo = $productNameResult->fetch_assoc();
-                $price = $conn->real_escape_string($productInfo['price']);
+                $price = $productInfo['price'];
                 error_log("Found price $price by product name for order detail");
             } else {
                 // Đặt giá mặc định
@@ -361,18 +362,19 @@ class Product_Model extends BaseModel {
                 error_log("Setting default price 10000 for product: $product_name");
             }
         }
-        
-        // Chỉ thực hiện insert, không kiểm tra cột nữa
-        $sql = "INSERT INTO order_details (order_id, product_id, product_name, quantity, price) 
-                VALUES ('$order_id', $product_id, '$product_name', '$quantity', '$price')";
-        
-        if ($conn->query($sql)) {
+        // Thực hiện insert chi tiết đơn hàng bằng prepared statement
+        $insertStmt = $conn->prepare("INSERT INTO order_details (order_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)");
+        $order_id_int = (int)$order_id;
+        $product_id_int = $product_id != 'NULL' ? (int)$product_id : null;
+        $quantity_int = (int)$quantity;
+        $price_float = (float)$price;
+        $insertStmt->bind_param("iisis", $order_id_int, $product_id_int, $product_name, $quantity_int, $price_float);
+        if ($insertStmt->execute()) {
             $insert_id = $conn->insert_id;
             error_log("Created order detail ID $insert_id with price $price");
             return $insert_id;
         } else {
             error_log("Error creating order detail: " . $conn->error);
-            error_log("SQL Query: " . $sql);
             return false;
         }
     }
