@@ -58,11 +58,11 @@ CREATE TABLE order_details (
 -- Thêm dữ liệu mẫu vào bảng products
 INSERT INTO products (name, description, price, image, category, stock)
 VALUES 
-('Điện thoại Samsung Galaxy S21', 'Điện thoại Samsung Galaxy S21 mới nhất với camera tuyệt vời', 20990000, 'product1.jpg', 'Điện thoại', 15),
-('Laptop MacBook Pro M1', 'MacBook Pro với chip M1 mạnh mẽ, màn hình Retina', 35990000, 'product2.jpg', 'Laptop', 8),
-('Tai nghe Bluetooth Apple AirPods Pro', 'Tai nghe không dây với chống ồn chủ động', 5990000, 'product3.jpg', 'Phụ kiện', 20),
-('Đồng hồ thông minh Apple Watch Series 7', 'Đồng hồ thông minh với màn hình luôn bật', 10990000, 'product4.jpg', 'Đồng hồ thông minh', 12),
-('Máy tính bảng iPad Air', 'iPad Air mỏng nhẹ với chip A14 Bionic', 16990000, 'product5.jpg', 'Máy tính bảng', 10);
+('Điện thoại Samsung Galaxy S21', 'Điện thoại Samsung Galaxy S21 mới nhất với camera tuyệt vời', 20990000, 'product1.jpg', 'Điện thoại', 50),
+('Laptop MacBook Pro M1', 'MacBook Pro với chip M1 mạnh mẽ, màn hình Retina', 35990000, 'product2.jpg', 'Laptop', 70),
+('Tai nghe Bluetooth Apple AirPods Pro', 'Tai nghe không dây với chống ồn chủ động', 5990000, 'product3.jpg', 'Phụ kiện', 60),
+('Đồng hồ thông minh Apple Watch Series 7', 'Đồng hồ thông minh với màn hình luôn bật', 10990000, 'product4.jpg', 'Đồng hồ thông minh', 35),
+('Máy tính bảng iPad Air', 'iPad Air mỏng nhẹ với chip A14 Bionic', 16990000, 'product5.jpg', 'Máy tính bảng', 65);
 
 -- Thông báo hoàn thành
 SELECT 'Thiết lập database db_product và các bảng thành công!' AS Message; 

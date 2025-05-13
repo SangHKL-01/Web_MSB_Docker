@@ -483,18 +483,11 @@
           </div>
           <?php endif; ?>
 
-          <form method="POST" action="index.php?controller=product&action=insert_cart&id=<?= $product['id'] ?>" id="add-to-cart-form">
+          <form method="POST" action="index.php?controller=product&action=insert_cart&id=<?= $product['id'] ?>" id="add-to-cart-form" data-product-id="<?= $product['id'] ?>">
             <input type="hidden" name="product_id" value="<?= $product['id'] ?>">
-            
-            <div class="quantity-control">
-              <button type="button" class="quantity-btn" onclick="decreaseQuantity()">-</button>
-              <input type="number" name="quantity" id="quantity" value="1" min="1" max="<?= isset($product['stock']) ? $product['stock'] : 1 ?>" class="quantity-input" 
-                <?php if (!isset($product['stock']) || $product['stock'] <= 0) echo "disabled"; ?>>
-              <button type="button" class="quantity-btn" onclick="increaseQuantity(<?= isset($product['stock']) ? $product['stock'] : 0 ?>)">+</button>
-            </div>
-            
+            <input type="hidden" name="quantity" id="add-to-cart-quantity" value="1">
             <div class="flex space-x-4">
-              <button type="submit" class="add-to-cart-btn" <?php if (!isset($product['stock']) || $product['stock'] <= 0) echo "disabled style='opacity: 0.6; cursor: not-allowed;'"; ?>>
+              <button type="button" class="add-to-cart-btn add-to-cart-btn-modal" data-product-id="<?= $product['id'] ?>" <?php if (!isset($product['stock']) || $product['stock'] <= 0) echo "disabled style='opacity: 0.6; cursor: not-allowed;'"; ?>>
                 <span class="cart-icon">🛒</span> Thêm vào giỏ hàng
               </button>
               <button type="button" class="add-to-cart-btn buy-now-btn" style="background-color: #e53e3e;" data-product-id="<?= $product['id'] ?>" <?php if (!isset($product['stock']) || $product['stock'] <= 0) echo "disabled style='opacity: 0.6; cursor: not-allowed; pointer-events: none;'"; ?>>
@@ -538,11 +531,7 @@
             </p>
             <div class="mt-4">
               <?php if (isset($item['stock']) && $item['stock'] > 0): ?>
-                <?php if (!isset($isOrderDetailPage) || !$isOrderDetailPage): ?>
-                  <a href="index.php?controller=product&action=insert_cart&id=<?= $item['id'] ?>" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition block text-center">
-                    Thêm vào giỏ
-                  </a>
-                <?php endif; ?>
+                <!-- ĐÃ BỎ NÚT THÊM VÀO GIỎ Ở ĐÂY -->
               <?php else: ?>
               <span class="bg-gray-300 text-gray-600 px-4 py-2 rounded-lg block text-center">
                 Hết hàng
@@ -664,29 +653,55 @@
     function closeBuyNow() {
         buyNowModal.classList.remove('active');
     }
-    if (buyNowBtn) {
-        buyNowBtn.addEventListener('click', function() {
-            var productId = buyNowBtn.getAttribute('data-product-id');
-            openBuyNowModal(productId);
-        });
-    }
+    var addToCartBtns = document.querySelectorAll('.add-to-cart-btn-modal');
+    addToCartBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var productId = btn.getAttribute('data-product-id');
+        openBuyNowModal(productId);
+        var confirmBtn = buyNowForm.querySelector('button[type="submit"]');
+        confirmBtn.textContent = 'Thêm vào Giỏ';
+        buyNowForm.onsubmit = null;
+        buyNowForm.onsubmit = function(e) {
+          e.preventDefault();
+          var quantity = buyNowQuantity.value;
+          if (!quantity || quantity < 1) quantity = 1;
+          var form = document.getElementById('add-to-cart-form');
+          if (form) {
+            form.querySelector('input[name="quantity"]').value = quantity;
+            form.submit();
+          }
+          closeBuyNow();
+        };
+      });
+    });
+
+    var buyNowBtns = document.querySelectorAll('.buy-now-btn');
+    buyNowBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var productId = btn.getAttribute('data-product-id');
+        openBuyNowModal(productId);
+        var confirmBtn = buyNowForm.querySelector('button[type="submit"]');
+        confirmBtn.textContent = 'Mua ngay';
+        buyNowForm.onsubmit = null;
+        buyNowForm.onsubmit = function(e) {
+          e.preventDefault();
+          var quantity = parseInt(buyNowQuantity.value);
+          var stock = <?= isset($product['stock']) ? (int)$product['stock'] : 9999 ?>;
+          if (!quantity || quantity < 1) quantity = 1;
+          if (quantity > stock) {
+            alert('Số lượng vượt quá tồn kho!');
+            buyNowQuantity.value = stock;
+            return;
+          }
+          window.location.href = 'index.php?controller=Product&action=buy_now&id=' + encodeURIComponent(productId) + '&quantity=' + encodeURIComponent(quantity);
+        };
+      });
+    });
+
     closeBuyNowModal.addEventListener('click', closeBuyNow);
     closeBuyNowModalX.addEventListener('click', closeBuyNow);
     buyNowModal.addEventListener('click', function(e) {
         if (e.target === buyNowModal) closeBuyNow();
-    });
-    buyNowForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        var productId = buyNowProductId.value;
-        var quantity = parseInt(buyNowQuantity.value);
-        var stock = <?= isset($product['stock']) ? (int)$product['stock'] : 9999 ?>;
-        if (!quantity || quantity < 1) quantity = 1;
-        if (quantity > stock) {
-          alert('Số lượng vượt quá tồn kho!');
-          buyNowQuantity.value = stock;
-          return;
-        }
-        window.location.href = 'index.php?controller=Product&action=buy_now&id=' + encodeURIComponent(productId) + '&quantity=' + encodeURIComponent(quantity);
     });
   </script>
 </body>
