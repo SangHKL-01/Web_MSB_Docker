@@ -9,12 +9,16 @@ class UserModel extends BaseModel {
 
     // Sử dụng prepared statement để chống SQL Injection
     public function authenticate($username, $password) {
-        $stmt = $this->db->getConnection()->prepare("SELECT * FROM $this->table WHERE username = ? AND password = ?");
-        $stmt->bind_param("ss", $username, $password);
+        $stmt = $this->db->getConnection()->prepare("SELECT * FROM $this->table WHERE username = ?");
+        $stmt->bind_param("s", $username);
         $stmt->execute();
         $result = $stmt->get_result();
         if ($result && $result->num_rows > 0) {
-            return $result->fetch_assoc();
+            $user = $result->fetch_assoc();
+            // Kiểm tra mật khẩu đã hash
+            if (password_verify($password, $user['password'])) {
+                return $user;
+            }
         }
         return null;
     }
@@ -24,9 +28,11 @@ class UserModel extends BaseModel {
         // Lọc đầu vào để chống XSS
         $username = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
         $email = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
+        // Hash mật khẩu trước khi lưu
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
         $data = [
             'username' => $username,
-            'password' => $password, // Lưu mật khẩu dưới dạng plain text
+            'password' => $hashedPassword,
             'email' => $email,
             'created_at' => date('Y-m-d H:i:s')
         ];
@@ -47,8 +53,10 @@ class UserModel extends BaseModel {
     }
     
     public function change_password($username, $new_password) {
+        // Hash mật khẩu mới trước khi lưu
+        $hashedPassword = password_hash($new_password, PASSWORD_DEFAULT);
         $data = [
-            'password' => $new_password
+            'password' => $hashedPassword
         ];
         
         $user = $this->Get_user($username);

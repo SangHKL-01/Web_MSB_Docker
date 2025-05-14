@@ -30,9 +30,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- Thêm dữ liệu mẫu vào bảng users
 INSERT INTO users (username, password, email, role, fullname, ngay_sinh, gioi_tinh, phone, address, created_at)
 VALUES 
-('admin', 'admin123', 'admin@example.com', 'admin', 'Quản trị viên', '1990-01-01', 'Nam', '0123456789', 'Hà Nội', NOW()),
-('user1', 'user123', 'user1@example.com', 'user', 'Người dùng 1', '1995-05-15', 'Nữ', '0987654321', 'Hồ Chí Minh', NOW()),
-('user2', 'user123', 'user2@example.com', 'user', 'Người dùng 2', '1988-10-20', 'Nam', '0369852147', 'Đà Nẵng', NOW())
+('admin', '$2y$10$B5/X4PsJG3e2DawJbLhlZ.OTp9ai5dLPPoEEnKbd3a95f03aEbTuq', 'admin@example.com', 'admin', 'Quản trị viên', '1990-01-01', 'Nam', '0123456789', 'Hà Nội', NOW())
 ON DUPLICATE KEY UPDATE updated_at = NOW();
 
 -- Thông báo hoàn thành

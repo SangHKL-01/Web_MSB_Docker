@@ -31,15 +31,11 @@ Nếu việc thiết lập tự động không hoạt động, bạn có thể t
 
 ## Tài khoản mặc định
 
-Sau khi cài đặt, bạn có thể đăng nhập bằng các tài khoản sau:
+Sau khi cài đặt, bạn có thể đăng nhập bằng tài khoản sau:
 
 - **Quản trị viên**:
   - Tên đăng nhập: admin
   - Mật khẩu: admin123
-
-- **Người dùng thường**:
-  - Tên đăng nhập: user1
-  - Mật khẩu: user123
 
 ## Cấu trúc thư mục
 

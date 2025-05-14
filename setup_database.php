@@ -39,25 +39,6 @@ if (executeMultipleQueries($conn, $db_product_sql)) {
     echo "<p style='color: red;'>✗ Lỗi khi thiết lập db_product: " . $conn->error . "</p>";
 }
 
-// Tạo thư mục uploads nếu chưa tồn tại
-echo "<h2>Tạo các thư mục cần thiết:</h2>";
-$directories = [
-    'uploads',
-    'uploads/avatars',
-    'uploads/products'
-];
-
-foreach ($directories as $dir) {
-    if (!file_exists($dir)) {
-        if (mkdir($dir, 0777, true)) {
-            echo "<p style='color: green;'>✓ Đã tạo thư mục $dir</p>";
-        } else {
-            echo "<p style='color: red;'>✗ Không thể tạo thư mục $dir</p>";
-        }
-    } else {
-        echo "<p style='color: blue;'>ℹ Thư mục $dir đã tồn tại</p>";
-    }
-}
 
 echo "<h2>Thiết lập hoàn tất!</h2>";
 echo "<p>Bạn có thể truy cập ứng dụng ngay bây giờ.</p>";

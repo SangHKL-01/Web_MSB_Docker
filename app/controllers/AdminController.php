@@ -183,15 +183,13 @@ class AdminController extends BaseController {
                     return;
                 }
             }
-            
-            // Mã hóa mật khẩu
-            $hashed_password = password_hash($postData['password'], PASSWORD_DEFAULT);
-            
+                       
             // Tạo dữ liệu người dùng mới
+            $hashedPassword = password_hash($postData['password'], PASSWORD_DEFAULT);
             $userData = [
                 'username' => $postData['username'],
                 'email' => $postData['email'],
-                'password' => $hashed_password,
+                'password' => $hashedPassword,
                 'fullname' => $postData['fullname'] ?? '',
                 'phone' => $postData['phone'] ?? '',
                 'address' => $postData['address'] ?? '',
@@ -297,7 +295,7 @@ class AdminController extends BaseController {
             
             // Nếu có cập nhật mật khẩu
             if (!empty($postData['password'])) {
-                $userData['password'] = $postData['password'];
+                $userData['password'] = password_hash($postData['password'], PASSWORD_DEFAULT);
             }
             
             // Cập nhật thông tin người dùng

@@ -106,7 +106,7 @@ class UserController extends BaseController {
             $user = $this->getLoggedInUser();
             $userData = $this->userModel->Get_user($user['username']);
             
-            if ($userData['password'] === $password) {
+            if (password_verify($password, $userData['password'])) {
                 if (strlen($new_password) < 6) {
                     $error = "Mật khẩu phải có ít nhất 6 ký tự";
                     $this->view('user/change_password', ['error' => $error]);
@@ -237,9 +237,10 @@ class UserController extends BaseController {
             } elseif ($password !== $confirm) {
                 $error = "Xác nhận mật khẩu không khớp";
             } else {
-                // Cập nhật mật khẩu mới và xóa token
+                // Cập nhật mật khẩu mới (hash) và xóa token
+                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
                 $userModel->update($user['id'], [
-                    'password' => $password,
+                    'password' => $hashedPassword,
                     'reset_token' => null,
                     'reset_token_expiry' => null
                 ]);
