@@ -93,7 +93,7 @@ class UserController extends BaseController {
     }
     
     // Đổi mật khẩu
-    public function forgot_password() {
+    public function change_password() {
         $this->requireLogin();
         
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -175,6 +175,88 @@ class UserController extends BaseController {
         }
         
         $this->redirect('user/profile');
+    }
+
+    // Chức năng quên mật khẩu
+    public function forgotPassword() {
+        require_once __DIR__ . '/../models/AdminModel.php';
+        require_once __DIR__ . '/../libraries/Mailer.php';
+        $userModel = new AdminModel();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = trim($_POST['email'] ?? '');
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $this->view('user/forgot_password', ['error' => 'Email không hợp lệ!']);
+                return;
+            }
+            $user = $userModel->getByEmail($email);
+            if (!$user) {
+                $this->view('user/forgot_password', ['error' => 'Email không tồn tại trong hệ thống!']);
+                return;
+            }
+            // Tạo token
+            $token = bin2hex(random_bytes(32));
+            $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            // Lưu token vào DB
+            $userModel->saveResetToken($user['id'], $token, $expiry);
+            // Gửi email
+            $scriptName = dirname($_SERVER['SCRIPT_NAME']);
+            $resetLink = (isset($_SERVER['HTTPS']) ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . $scriptName . "/index.php?controller=User&action=resetPassword&token=$token";
+            $subject = "Đặt lại mật khẩu";
+            $body = "Nhấn vào liên kết sau để đặt lại mật khẩu: <a href='$resetLink'>$resetLink</a>";
+            $sendResult = Mailer::send($email, $subject, $body);
+            if ($sendResult) {
+                $this->view('user/forgot_password', ['success' => 'Vui lòng kiểm tra email để đặt lại mật khẩu!']);
+            } else {
+                $this->view('user/forgot_password', ['error' => 'Không thể gửi email. Vui lòng thử lại sau!']);
+            }
+            return;
+        }
+        $this->view('user/forgot_password');
+    }
+
+    // Đặt lại mật khẩu qua token
+    public function resetPassword() {
+        $userModel = $this->userModel;
+        $token = $_GET['token'] ?? '';
+        if (!$token) {
+            echo "Liên kết không hợp lệ!";
+            return;
+        }
+        // Tìm user theo token
+        $user = $userModel->findByField('reset_token', $token);
+        if (!$user || strtotime($user['reset_token_expiry']) < time()) {
+            echo "Liên kết đã hết hạn hoặc không hợp lệ!";
+            return;
+        }
+        $error = '';
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $password = $_POST['password'] ?? '';
+            $confirm = $_POST['confirm_password'] ?? '';
+            if (strlen($password) < 6) {
+                $error = "Mật khẩu phải có ít nhất 6 ký tự";
+            } elseif ($password !== $confirm) {
+                $error = "Xác nhận mật khẩu không khớp";
+            } else {
+                // Cập nhật mật khẩu mới và xóa token
+                $userModel->update($user['id'], [
+                    'password' => $password,
+                    'reset_token' => null,
+                    'reset_token_expiry' => null
+                ]);
+                echo "Đặt lại mật khẩu thành công! Bạn có thể <a href='index.php?controller=user&action=login'>đăng nhập</a>.";
+                return;
+            }
+        }
+        // Hiển thị form đổi mật khẩu
+        echo '<form method="post">';
+        echo '<h2>Đặt lại mật khẩu</h2>';
+        if (!empty($error)) echo "<p style='color:red;'>$error</p>";
+        echo '<label>Mật khẩu mới:</label>';
+        echo '<input type="password" name="password" required>';
+        echo '<label>Xác nhận mật khẩu mới:</label>';
+        echo '<input type="password" name="confirm_password" required>';
+        echo '<button type="submit">Đổi mật khẩu</button>';
+        echo '</form>';
     }
 }
 ?>

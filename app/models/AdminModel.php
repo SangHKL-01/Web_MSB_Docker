@@ -132,4 +132,16 @@ class AdminModel extends BaseModel {
             return ['status' => false, 'message' => 'Cập nhật thông tin thất bại'];
         }
     }
+
+    // Lấy người dùng theo email (alias cho findByEmail)
+    public function getByEmail($email) {
+        return $this->findByEmail($email);
+    }
+
+    // Lưu token đặt lại mật khẩu
+    public function saveResetToken($user_id, $token, $expiry) {
+        $stmt = $this->db->getConnection()->prepare("UPDATE {$this->table} SET reset_token = ?, reset_token_expiry = ? WHERE id = ?");
+        $stmt->bind_param("ssi", $token, $expiry, $user_id);
+        return $stmt->execute();
+    }
 } 

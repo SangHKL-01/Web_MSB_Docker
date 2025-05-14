@@ -29,7 +29,7 @@
         <a href="index.php?controller=Product&action=history" class="flex items-center gap-2 px-2 py-2 rounded hover:bg-orange-100">
           <span>📦</span> Lịch sử mua hàng
         </a>
-        <a href="index.php?controller=user&action=forgot_password" class="flex items-center gap-2 px-2 py-2 rounded hover:bg-orange-100">
+        <a href="index.php?controller=user&action=change_password" class="flex items-center gap-2 px-2 py-2 rounded hover:bg-orange-100">
           <span>🔒</span> Đổi mật khẩu
         </a>
         <a href="index.php?controller=user&action=logout" class="flex items-center gap-2 px-2 py-2 rounded hover:bg-orange-100 text-red-600">

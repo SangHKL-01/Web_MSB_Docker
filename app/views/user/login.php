@@ -1,6 +1,3 @@
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,5 +25,8 @@
     </div>
     <div class="register">
         <a href="index.php?controller=user&action=register">Create user</a>
+    </div>
+    <div class="forgot-password" style="margin-top: 10px; text-align: center;">
+        <a href="index.php?controller=user&action=forgotPassword">Quên mật khẩu?</a>
     </div>
 </form>

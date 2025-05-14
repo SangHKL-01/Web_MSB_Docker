@@ -114,5 +114,17 @@ class UserModel extends BaseModel {
             return ['status' => false, 'message' => 'Không thể lưu file avatar.'];
         }
     }
+
+    // Tìm user theo trường bất kỳ
+    public function findByField($field, $value) {
+        $stmt = $this->db->getConnection()->prepare("SELECT * FROM $this->table WHERE $field = ?");
+        $stmt->bind_param("s", $value);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($result && $result->num_rows > 0) {
+            return $result->fetch_assoc();
+        }
+        return null;
+    }
 }
 ?>
