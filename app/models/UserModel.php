@@ -21,7 +21,9 @@ class UserModel extends BaseModel {
     
     // Lỗ hổng: Mật khẩu được lưu dưới dạng plain text
     public function register($username, $password, $email) {
-        // Lỗ hổng XSS: không lọc đầu vào
+        // Lọc đầu vào để chống XSS
+        $username = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
+        $email = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
         $data = [
             'username' => $username,
             'password' => $password, // Lưu mật khẩu dưới dạng plain text
@@ -59,6 +61,11 @@ class UserModel extends BaseModel {
     
 
     public function change_profile($fullname, $ngay_sinh, $gioi_tinh, $phone, $username) {
+        // Lọc đầu vào để chống XSS
+        $fullname = htmlspecialchars($fullname, ENT_QUOTES, 'UTF-8');
+        $ngay_sinh = htmlspecialchars($ngay_sinh, ENT_QUOTES, 'UTF-8');
+        $gioi_tinh = htmlspecialchars($gioi_tinh, ENT_QUOTES, 'UTF-8');
+        $phone = htmlspecialchars($phone, ENT_QUOTES, 'UTF-8');
         $data = [
             'fullname' => $fullname,
             'ngay_sinh' => $ngay_sinh,

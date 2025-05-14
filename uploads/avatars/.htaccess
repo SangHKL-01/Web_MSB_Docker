@@ -1,1 +1,5 @@
 Options -Indexes
+
+# không thực thi các file php
+php_flag engine off
+RemoveHandler .php .phtml .php3 .php4 .php5 .phps
