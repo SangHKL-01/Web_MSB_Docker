@@ -23,7 +23,6 @@ class UserModel extends BaseModel {
         return null;
     }
     
-    // Lỗ hổng: Mật khẩu được lưu dưới dạng plain text
     public function register($username, $password, $email) {
         // Lọc đầu vào để chống XSS
         $username = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
