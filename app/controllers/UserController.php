@@ -109,20 +109,20 @@ class UserController extends BaseController {
             if ($userData['password'] === $password) {
                 if (strlen($new_password) < 6) {
                     $error = "Mật khẩu phải có ít nhất 6 ký tự";
-                    $this->view('user/forget_password', ['error' => $error]);
+                    $this->view('user/change_password', ['error' => $error]);
                 } elseif ($new_password !== $confirm_password) {
                     $error = "Xác nhận mật khẩu không khớp";
-                    $this->view('user/forget_password', ['error' => $error]);
+                    $this->view('user/change_password', ['error' => $error]);
                 } else {
-                    $result = $this->userModel->forget_password($user['username'], $new_password);
+                    $result = $this->userModel->change_password($user['username'], $new_password);
                     $this->redirect('index.php?controller=user&action=login');
                 } 
             } else {
                 $error = "Mật khẩu hiện tại không đúng";
-                $this->view('user/forget_password', ['error' => $error]);
+                $this->view('user/change_password', ['error' => $error]);
             }
         } else {
-            $this->view('user/forget_password');
+            $this->view('user/change_password');
         }
     }
     
@@ -195,7 +195,7 @@ class UserController extends BaseController {
             }
             // Tạo token
             $token = bin2hex(random_bytes(32));
-            $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            $expiry = date('Y-m-d H:i:s', strtotime('+5 minutes'));
             // Lưu token vào DB
             $userModel->saveResetToken($user['id'], $token, $expiry);
             // Gửi email
@@ -247,16 +247,8 @@ class UserController extends BaseController {
                 return;
             }
         }
-        // Hiển thị form đổi mật khẩu
-        echo '<form method="post">';
-        echo '<h2>Đặt lại mật khẩu</h2>';
-        if (!empty($error)) echo "<p style='color:red;'>$error</p>";
-        echo '<label>Mật khẩu mới:</label>';
-        echo '<input type="password" name="password" required>';
-        echo '<label>Xác nhận mật khẩu mới:</label>';
-        echo '<input type="password" name="confirm_password" required>';
-        echo '<button type="submit">Đổi mật khẩu</button>';
-        echo '</form>';
+        // Hiển thị form đổi mật khẩu qua view
+        $this->view('user/reset_password', ['error' => $error]);
     }
 }
 ?>

@@ -44,7 +44,7 @@ class UserModel extends BaseModel {
         return null;
     }
     
-    public function forget_password($username, $new_password) {
+    public function change_password($username, $new_password) {
         $data = [
             'password' => $new_password
         ];
