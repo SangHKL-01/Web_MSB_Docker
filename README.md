@@ -41,16 +41,26 @@ Sau khi cài đặt, bạn có thể đăng nhập bằng tài khoản sau:
 
 ```
 WEB_MSB/
-├── app/                  # Mã nguồn ứng dụng
-│   ├── controllers/      # Các controller
-│   ├── models/           # Các model
-│   └── views/            # Các view
-├── db/                   # Các file liên quan đến database
-├── public/               # Tài nguyên công khai (hình ảnh, CSS, JS)
-├── uploads/              # Thư mục chứa file người dùng tải lên
-├── db_user_setup.sql      # Script tạo database db_user
+├── app/
+│   ├── controllers/      # Controller cho các chức năng (AdminController, UserController, ...)
+│   ├── models/           # Model cho dữ liệu (UserModel, Product_Model, ...)
+│   ├── views/            # View cho giao diện
+│   │   ├── user/
+│   │   ├── admin/
+│   │   └── product/
+│   └── libraries/        # Thư viện dùng chung (Mailer, PHPMailer)
+├── db/                   # Kết nối và cấu hình database
+│   └── db.php
+├── public/               # Tài nguyên công khai
+│   └── assets/
+│       ├── images/
+│       └── CSS/
+├── uploads/              # File người dùng tải lên
+│   └── avatars/
+├── db_user_setup.sql     # Script tạo database db_user
 ├── db_product_setup.sql  # Script tạo database db_product
 ├── setup_database.php    # Script thiết lập cơ sở dữ liệu
+├── .htaccess             # Cấu hình rewrite, bảo mật
 └── index.php             # Tệp khởi đầu
 ```
 
