@@ -34,7 +34,7 @@ CREATE TABLE carts (
 CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    total_amount DECIMAL(10, 2) NOT NULL,
+    total_amount DECIMAL(13, 2) NOT NULL,
     status VARCHAR(50) DEFAULT 'đang xử lý',
     payment_method VARCHAR(100),
     customer_name VARCHAR(255) DEFAULT 'Khách hàng',
