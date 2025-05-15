@@ -105,8 +105,14 @@ class UserModel extends BaseModel {
             return ['status' => false, 'message' => 'Chỉ chấp nhận file ảnh (JPEG, PNG, GIF).'];
         }
         
+        // Kiểm tra đuôi file hợp lệ
+        $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($extension, $allowed_extensions)) {
+            return ['status' => false, 'message' => 'Định dạng file không hợp lệ.'];
+        }
+        
         // Tạo tên file mới để tránh trùng lặp
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
         $new_filename = 'avatar_' . $user_id . '_' . uniqid() . '.' . $extension;
         $target_file = 'uploads/avatars/' . $new_filename;
         
