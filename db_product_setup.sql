@@ -26,7 +26,8 @@ CREATE TABLE carts (
     product_name VARCHAR(255),
     quantity INT NOT NULL DEFAULT 1,
     price DECIMAL(10, 2) DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
 -- Tạo bảng orders
@@ -52,7 +53,9 @@ CREATE TABLE order_details (
     product_id INT,
     product_name VARCHAR(255) NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
-    price DECIMAL(10, 2) NOT NULL
+    price DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
 -- Thêm dữ liệu mẫu vào bảng products

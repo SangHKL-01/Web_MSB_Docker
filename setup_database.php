@@ -23,22 +23,41 @@ echo "<h1>Đang thiết lập cơ sở dữ liệu...</h1>";
 $db_user_sql = file_get_contents('db_user_setup.sql');
 $db_product_sql = file_get_contents('db_product_setup.sql');
 
-// Chạy script db_user_setup.sql
-echo "<h2>Thiết lập database db_user:</h2>";
-if (executeMultipleQueries($conn, $db_user_sql)) {
-    echo "<p style='color: green;'>✓ Thiết lập db_user thành công</p>";
-} else {
-    echo "<p style='color: red;'>✗ Lỗi khi thiết lập db_user: " . $conn->error . "</p>";
+// Hàm kiểm tra database đã tồn tại chưa
+function databaseExists($conn, $dbName) {
+    $result = $conn->query("SHOW DATABASES LIKE '" . $conn->real_escape_string($dbName) . "'");
+    return $result && $result->num_rows > 0;
 }
 
-// Chạy script db_product_setup.sql
-echo "<h2>Thiết lập database db_product:</h2>";
-if (executeMultipleQueries($conn, $db_product_sql)) {
-    echo "<p style='color: green;'>✓ Thiết lập db_product thành công</p>";
-} else {
-    echo "<p style='color: red;'>✗ Lỗi khi thiết lập db_product: " . $conn->error . "</p>";
+// Hàm kiểm tra bảng đã tồn tại trong database chưa
+function tableExists($conn, $dbName, $tableName) {
+    $result = $conn->query("SELECT 1 FROM information_schema.tables WHERE table_schema = '" . $conn->real_escape_string($dbName) . "' AND table_name = '" . $conn->real_escape_string($tableName) . "' LIMIT 1");
+    return $result && $result->num_rows > 0;
 }
 
+// Kiểm tra db_user và bảng users
+if (databaseExists($conn, 'db_user') && tableExists($conn, 'db_user', 'users')) {
+    echo "<h2>Database db_user và bảng users đã tồn tại. Không cần khởi tạo lại.</h2>";
+} else {
+    echo "<h2>Thiết lập database db_user:</h2>";
+    if (executeMultipleQueries($conn, $db_user_sql)) {
+        echo "<p style='color: green;'>✓ Thiết lập db_user thành công</p>";
+    } else {
+        echo "<p style='color: red;'>✗ Lỗi khi thiết lập db_user: " . $conn->error . "</p>";
+    }
+}
+
+// Kiểm tra db_product và bảng products
+if (databaseExists($conn, 'db_product') && tableExists($conn, 'db_product', 'products')) {
+    echo "<h2>Database db_product và các bảng đã tồn tại. Không cần khởi tạo lại.</h2>";
+} else {
+    echo "<h2>Thiết lập database db_product:</h2>";
+    if (executeMultipleQueries($conn, $db_product_sql)) {
+        echo "<p style='color: green;'>✓ Thiết lập db_product thành công</p>";
+    } else {
+        echo "<p style='color: red;'>✗ Lỗi khi thiết lập db_product: " . $conn->error . "</p>";
+    }
+}
 
 echo "<h2>Thiết lập hoàn tất!</h2>";
 echo "<p>Bạn có thể truy cập ứng dụng ngay bây giờ.</p>";
@@ -51,20 +70,26 @@ $conn->close();
  * Hàm thực thi nhiều câu lệnh SQL cùng lúc
  */
 function executeMultipleQueries($connection, $sqlScript) {
-    // Tách script thành các câu lệnh riêng biệt
     $statements = explode(';', $sqlScript);
     $success = true;
-    
     foreach ($statements as $statement) {
         $statement = trim($statement);
         if (!empty($statement)) {
             if (!$connection->query($statement . ';')) {
-                echo "<p style='color: red;'>Lỗi: " . $connection->error . "<br>SQL: " . htmlspecialchars($statement) . "</p>";
+                // Bỏ qua lỗi nếu database/table đã tồn tại
+                $error = $connection->error;
+                if (
+                    strpos($error, 'database exists') !== false ||
+                    strpos($error, 'already exists') !== false
+                ) {
+                    // Không báo lỗi, tiếp tục
+                    continue;
+                }
+                echo "<p style='color: red;'>Lỗi: " . $error . "<br>SQL: " . htmlspecialchars($statement) . "</p>";
                 $success = false;
             }
         }
     }
-    
     return $success;
 }
 ?> 
