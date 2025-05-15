@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chi Tiết Sản Phẩm - Kheo Báng Shop</title>
+  <title>Chi Tiết Sản Phẩm - MSB Shop</title>
   <link rel="stylesheet" href="/WEB_MSB/public/assets/CSS/homepage.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -413,7 +413,7 @@
   <header class="header">
     <div class="nav-container">
       <div class="logo">
-        <a href="index.php">Kheo Báng</a>
+        <a href="index.php">MSB Shop</a>
       </div>
       <nav>
         <ul>

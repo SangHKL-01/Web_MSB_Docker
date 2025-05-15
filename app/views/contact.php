@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liên Hệ - Kheo Báng Shop</title>
+    <title>Liên Hệ - MSB Shop</title>
     <link rel="stylesheet" href="http://localhost/WEB_MSB/public/assets/CSS/homepage.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -50,7 +50,7 @@
     <header class="header">
         <div class="nav-container">
             <div class="logo">
-                <a href="index.php">Kheo Báng</a>
+                <a href="index.php">MSB Shop</a>
             </div>
             <nav>
                 <ul>
@@ -113,7 +113,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <p>&copy; 2023 Kheo Báng Shop. Tất cả quyền lợi được bảo vệ.</p>
+            <p>&copy; 2023 MSB Shop. Tất cả quyền lợi được bảo vệ.</p>
             <ul class="footer-links">
                 <li>Chính Sách Bảo Mật</li>
                 <li>Điều Khoản Sử Dụng</li>

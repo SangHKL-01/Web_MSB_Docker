@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đặt Hàng Thành Công - Kheo Báng Shop</title>
+    <title>Đặt Hàng Thành Công - MSB Shop</title>
     <link rel="stylesheet" href="http://localhost/WEB_MSB/public/assets/CSS/homepage.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -135,7 +135,7 @@
     <header class="header">
         <div class="nav-container">
             <div class="logo">
-                <a href="index.php">Kheo Báng</a>
+                <a href="index.php">MSB Shop</a>
             </div>
             <nav>
                 <ul>
@@ -177,7 +177,7 @@
             </div>
             
             <div class="success-body">
-                <p class="message">Cảm ơn bạn đã mua sắm tại Kheo Báng Shop. Đơn hàng của bạn đã được tiếp nhận và đang được xử lý.</p>
+                <p class="message">Cảm ơn bạn đã mua sắm tại MSB Shop. Đơn hàng của bạn đã được tiếp nhận và đang được xử lý.</p>
                 
                 <div class="order-info">
                     <div class="order-number">Mã đơn hàng: #<?= htmlspecialchars($order_number) ?></div>
@@ -204,7 +204,7 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-            <p>&copy; 2023 Kheo Báng Shop. Tất cả quyền lợi được bảo vệ.</p>
+            <p>&copy; 2023 MSB Shop. Tất cả quyền lợi được bảo vệ.</p>
             <ul class="footer-links">
                 <li><a href="#">Chính Sách Bảo Mật</a></li>
                 <li><a href="#">Điều Khoản Sử Dụng</a></li>
