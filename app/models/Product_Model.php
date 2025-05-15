@@ -166,13 +166,13 @@ class Product_Model extends BaseModel {
     // Lỗ hổng: File upload không kiểm tra loại tệp
     public function uploadProductImage($file) {
         $target_dir = "uploads/products/";
-        $target_file = $target_dir . basename($file["name"]);
-        
+        $extension = pathinfo($file["name"], PATHINFO_EXTENSION);
+        $new_filename = 'product_' . uniqid() . '.' . $extension;
+        $target_file = $target_dir . $new_filename;
         // Lỗ hổng: Không kiểm tra loại tệp - cho phép tải lên PHP shell
         if (move_uploaded_file($file["tmp_name"], $target_file)) {
             return $target_file;
         }
-        
         return false;
     }
     

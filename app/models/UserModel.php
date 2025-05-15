@@ -107,10 +107,7 @@ class UserModel extends BaseModel {
         
         // Tạo tên file mới để tránh trùng lặp
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $new_filename = 'avatar_' . $user_id .'.' . $extension;
-        
-
-        
+        $new_filename = 'avatar_' . $user_id . '_' . uniqid() . '.' . $extension;
         $target_file = 'uploads/avatars/' . $new_filename;
         
         // Di chuyển file tải lên vào thư mục đích
