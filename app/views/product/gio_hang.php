@@ -12,10 +12,12 @@
   <h1 class="text-2xl font-bold mb-6">Giỏ Hàng Của Bạn</h1>
   
   <?php if (!empty($products)): ?>
+    <form method="POST" action="index.php?controller=product&action=checkout">
     <div class="overflow-x-auto mt-6">
         <table class="min-w-full border border-gray-300 bg-white shadow rounded-lg">
             <thead class="bg-gray-100">
                 <tr>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700"><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">ID</th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Tên sản phẩm</th>
                     <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Số lượng</th>
@@ -34,6 +36,7 @@
                     $total += $subtotal;
                 ?>
                     <tr class="border-t">
+                        <td class="px-4 py-2"><input type="checkbox" name="cart_ids[]" value="<?= $product['id'] ?>"></td>
                         <td class="px-4 py-2"><?= $product['id'] ?? '-' ?></td>
                         <td class="px-4 py-2"><?= $product['product_name'] ?? $product['name'] ?? $product['name_product'] ?? '-' ?></td>
                         <td class="px-4 py-2"><?= $quantity ?></td>
@@ -48,23 +51,29 @@
                     </tr>
                 <?php endforeach; ?>
                 <tr class="border-t font-bold bg-gray-50">
-                    <td colspan="4" class="px-4 py-2 text-right">Tổng tiền:</td>
-                    <td class="px-4 py-2"><?= number_format($total, 0, ',', '.') ?> đ</td>
-                    <td></td>
+                    <td colspan="5" class="px-4 py-2 text-right">Tổng tiền (tạm tính):</td>
+                    <td class="px-4 py-2" colspan="2"><?= number_format($total, 0, ',', '.') ?> đ</td>
                 </tr>
             </tbody>
         </table>
-        
+        <script>
+        function toggleAll(source) {
+            checkboxes = document.getElementsByName('cart_ids[]');
+            for(var i=0, n=checkboxes.length;i<n;i++) {
+                checkboxes[i].checked = source.checked;
+            }
+        }
+        </script>
         <div class="mt-6 flex justify-between items-center">
           <a href="index.php?controller=product&action=index" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded">
             Tiếp tục mua hàng
           </a>
-          
-          <a href="index.php?controller=product&action=checkout" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
-            Thanh toán
-          </a>
+          <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+            Thanh toán các sản phẩm đã chọn
+          </button>
         </div>
     </div>
+    </form>
   <?php else: ?>
     <div class="bg-white p-8 rounded-lg shadow text-center">
       <p class="text-gray-600 mb-4">Giỏ hàng của bạn chưa có sản phẩm nào.</p>

@@ -56,12 +56,6 @@ class Product_Model extends BaseModel {
         $price = (float)$price; // Đảm bảo giá là số thực
         $product_id = $conn->real_escape_string($product_id);
         
-        // Kiểm tra sản phẩm đã tồn tại trong giỏ hàng chưa (prepared statement)
-        $checkExistStmt = $conn->prepare("SELECT id, quantity FROM carts WHERE user_id = ? AND product_id = ?");
-        $checkExistStmt->bind_param("ii", $user_id, $product_id);
-        $checkExistStmt->execute();
-        $existResult = $checkExistStmt->get_result();
-        
         // Lấy số lượng tồn kho hiện tại của sản phẩm (prepared statement)
         $stockStmt = $conn->prepare("SELECT stock FROM products WHERE id = ? LIMIT 1");
         $stockStmt->bind_param("i", $product_id);
@@ -78,40 +72,8 @@ class Product_Model extends BaseModel {
                 'message' => 'Không tìm thấy sản phẩm.'
             ];
         }
-         
-        //đã tồn tại trong giỏ hàng, cập nhật số lượng
-        if ($existResult && $existResult->num_rows > 0) {
-            $existItem = $existResult->fetch_assoc();
-            $checkQuantity = $existItem['quantity'] + $quantity;
-            if($checkQuantity > $stock){
-                error_log("Số lượng sản phẩm vượt quá số lượng trong kho");
-                return [
-                    'status' => false,
-                    'message' => 'Số lượng sản phẩm vượt quá số lượng trong kho. Vui lòng chọn số lượng nhỏ hơn!'
-                ];
-            }else{
-                $newQuantity = $checkQuantity;
-            }
-            $cartId = $existItem['id'];
-            
-            $updateStmt = $conn->prepare("UPDATE carts SET quantity = ? WHERE id = ?");
-            $updateStmt->bind_param("ii", $newQuantity, $cartId);
-            $result = $updateStmt->execute();
-            
-            if (!$result) {
-                error_log("SQL Error in updating cart: " . $conn->error);
-                return [
-                    'status' => false,
-                    'message' => 'Lỗi khi cập nhật giỏ hàng.'
-                ];
-            }
-            
-            return [
-                'status' => true,
-                'message' => 'Thêm sản phẩm vào giỏ hàng thành công!'
-            ];
-        }
-        // Nếu sản phẩm chưa có trong giỏ, kiểm tra số lượng yêu cầu
+        
+        // Kiểm tra số lượng yêu cầu không vượt quá tồn kho
         if ($quantity > $stock) {
             error_log("Số lượng sản phẩm vượt quá số lượng trong kho");
             return [
@@ -119,7 +81,7 @@ class Product_Model extends BaseModel {
                 'message' => 'Số lượng sản phẩm vượt quá số lượng trong kho. Vui lòng chọn số lượng nhỏ hơn!'
             ];
         }
-        // Thêm mới sản phẩm vào giỏ hàng (prepared statement)
+        // Luôn thêm mới sản phẩm vào giỏ hàng (không kiểm tra trùng)
         $insertStmt = $conn->prepare("INSERT INTO carts (user_id, product_id, product_name, quantity, price) VALUES (?, ?, ?, ?, ?)");
         $insertStmt->bind_param("iisid", $user_id, $product_id, $name_product, $quantity, $price);
         $result = $insertStmt->execute();
@@ -487,5 +449,18 @@ class Product_Model extends BaseModel {
             error_log("SQL Query: " . $sql);
         }
         return $result;
+    }
+
+    // Xóa nhiều sản phẩm khỏi giỏ hàng theo mảng id
+    public function removeMultipleFromCart($user_id, $cart_ids) {
+        $productDb = Database::getProductInstance();
+        $conn = $productDb->getConnection();
+        if (!$conn || empty($cart_ids)) return false;
+        $placeholders = implode(',', array_fill(0, count($cart_ids), '?'));
+        $types = str_repeat('i', count($cart_ids) + 1); // user_id + ids
+        $params = array_merge([$user_id], $cart_ids);
+        $stmt = $conn->prepare("DELETE FROM carts WHERE user_id = ? AND id IN ($placeholders)");
+        $stmt->bind_param($types, ...$params);
+        return $stmt->execute();
     }
 }

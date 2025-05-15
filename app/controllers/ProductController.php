@@ -220,18 +220,40 @@ class ProductController extends BaseController {
 
         $user = $this->getLoggedInUser();
         $user_id = $user['id'];
-        $cart_items = $this->productModel->List_product($user_id);
+        $all_cart_items = $this->productModel->List_product($user_id);
+        $cart_items = $all_cart_items;
         $total_amount = 0;
 
+        // Nếu là POST từ giỏ hàng sang (chọn sản phẩm để thanh toán)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cart_ids'])) {
+            $selected_ids = array_map('intval', $_POST['cart_ids']);
+            // Lọc lại chỉ các sản phẩm được chọn
+            $cart_items = array_filter($all_cart_items, function($item) use ($selected_ids) {
+                return in_array($item['id'], $selected_ids);
+            });
+            if (empty($cart_items)) {
+                $_SESSION['error'] = "Vui lòng chọn sản phẩm để thanh toán.";
+                $this->redirect('product/gio_hang');
+                exit;
+            }
+            // Lưu tạm các id đã chọn vào session để dùng cho bước xác nhận thanh toán
+            $_SESSION['checkout_cart_ids'] = $selected_ids;
+        } elseif (isset($_SESSION['checkout_cart_ids'])) {
+            // Nếu đã chọn từ trước, dùng lại
+            $selected_ids = $_SESSION['checkout_cart_ids'];
+            $cart_items = array_filter($all_cart_items, function($item) use ($selected_ids) {
+                return in_array($item['id'], $selected_ids);
+            });
+        }
+
         if (empty($cart_items)) {
-            $_SESSION['error'] = "Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm trước khi thanh toán.";
+            $_SESSION['error'] = "Giỏ hàng của bạn đang trống hoặc chưa chọn sản phẩm để thanh toán.";
             $this->redirect('product/gio_hang');
             exit;
         }
 
-        // Trong phương thức checkout()
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Lấy thông tin của người dùng từ form checkout
+        // Khi xác nhận đặt hàng (POST từ form checkout)
+        if (isset($_POST['fullname']) && isset($_SESSION['checkout_cart_ids'])) {
             $customer_name = isset($_POST['fullname']) ? $_POST['fullname'] : '';
             $email = isset($_POST['email']) ? $_POST['email'] : '';
             $phone = isset($_POST['phone']) ? $_POST['phone'] : '';
@@ -245,27 +267,20 @@ class ProductController extends BaseController {
                 $this->redirect('product/checkout');
                 exit;
             }
-            
-            // Kiểm tra số điện thoại chỉ chứa số
             if (!preg_match('/^\d+$/', $phone)) {
                 $_SESSION['error'] = "Số điện thoại chỉ được chứa chữ số.";
                 $this->redirect('product/checkout');
                 exit;
             }
-            
-            // Kiểm tra độ dài số điện thoại
             if (strlen($phone) < 10 || strlen($phone) > 11) {
                 $_SESSION['error'] = "Số điện thoại phải có 10-11 chữ số.";
                 $this->redirect('product/checkout');
                 exit;
             }
-            
-            // Tính tổng tiền từ giỏ hàng
+            // Tính tổng tiền từ các sản phẩm được chọn
             foreach ($cart_items as $item) {
                 $total_amount += $item['price'] * $item['quantity'];
             }
-
-            // Tạo đơn hàng mới
             $order_data = [
                 'user_id' => $user_id,
                 'customer_name' => $customer_name,
@@ -276,11 +291,8 @@ class ProductController extends BaseController {
                 'payment_method' => $payment_method,
                 'notes' => $notes
             ];
-
             $order_id = $this->productModel->createOrder($order_data);
-
             if ($order_id) {
-                // Tạo chi tiết đơn hàng cho mỗi sản phẩm trong giỏ hàng
                 foreach ($cart_items as $item) {
                     $order_detail_data = [
                         'order_id' => $order_id,
@@ -291,20 +303,14 @@ class ProductController extends BaseController {
                         'price' => $item['price'],
                         'product_id' => isset($item['product_id']) ? $item['product_id'] : null
                     ];
-
                     $this->productModel->createOrderDetail($order_detail_data);
-                    
-                    // Cập nhật số lượng sản phẩm trong kho sau khi đặt hàng
                     if (isset($item['product_id']) && $item['product_id']) {
                         $this->productModel->updateProductQuantity($item['product_id'], $item['quantity']);
                     }
                 }
-
-                // Xóa giỏ hàng sau khi đặt hàng thành công
-                $this->productModel->clearCart($user_id);
-                
-
-                // Lưu ID đơn hàng vừa tạo để hiển thị trong trang cảm ơn
+                // Xóa các sản phẩm đã đặt khỏi giỏ hàng
+                $this->productModel->removeMultipleFromCart($user_id, $_SESSION['checkout_cart_ids']);
+                unset($_SESSION['checkout_cart_ids']);
                 $_SESSION['last_order_id'] = $order_id;
                 $_SESSION['success'] = "Đặt hàng thành công.";
                 $this->redirect('product/thank_you');
@@ -315,8 +321,7 @@ class ProductController extends BaseController {
                 exit;
             }
         }
-
-        // Hiển thị trang thanh toán nếu không phải là POST request
+        // Hiển thị trang thanh toán nếu không phải là POST request xác nhận
         $this->view('product/checkout', ['products' => $cart_items]);
     }
     
